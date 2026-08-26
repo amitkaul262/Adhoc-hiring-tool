@@ -40,6 +40,7 @@ create sequence if not exists requisition_seq;
 create table if not exists requisitions (
   id uuid primary key default gen_random_uuid(),
   requisition_id text unique not null,
+  batch_id uuid,               -- groups requisitions raised together in one multi-role submission
 
   -- who raised it
   raised_by_email text not null references employee_master(email),
@@ -71,6 +72,7 @@ create table if not exists requisitions (
 create index if not exists idx_requisitions_raised_by on requisitions(raised_by_email);
 create index if not exists idx_requisitions_hod on requisitions(hod_email);
 create index if not exists idx_requisitions_status on requisitions(status);
+create index if not exists idx_requisitions_batch on requisitions(batch_id);
 
 -- auto-generate a human-readable requisition ID: REQ-<YYMM>-<seq>
 create or replace function generate_requisition_id()
@@ -119,7 +121,32 @@ create table if not exists requisition_events (
 create index if not exists idx_requisition_events_reqid on requisition_events(requisition_id);
 
 -- ------------------------------------------------------------
--- 4. Row Level Security
+-- 4. Attendance
+-- Once a requisition is approved, the store manager (and HR, for
+-- oversight/backup) mark daily headcount actually present against
+-- the sanctioned number_of_workers for that requisition.
+-- ------------------------------------------------------------
+create table if not exists requisition_attendance (
+  id uuid primary key default gen_random_uuid(),
+  requisition_id text not null references requisitions(requisition_id) on delete cascade,
+  attendance_date date not null,
+  workers_present integer not null check (workers_present >= 0),
+  marked_by_email text not null,
+  remarks text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (requisition_id, attendance_date)
+);
+
+create index if not exists idx_attendance_requisition on requisition_attendance(requisition_id);
+
+drop trigger if exists trg_attendance_touch on requisition_attendance;
+create trigger trg_attendance_touch
+  before update on requisition_attendance
+  for each row execute function touch_updated_at();
+
+-- ------------------------------------------------------------
+-- 5. Row Level Security
 -- Store managers see only their own requisitions.
 -- HOD sees only what's routed to them. HR/admin see everything.
 -- (We only build the store-manager UI now, but wiring RLS up
@@ -128,6 +155,7 @@ create index if not exists idx_requisition_events_reqid on requisition_events(re
 alter table employee_master enable row level security;
 alter table requisitions enable row level security;
 alter table requisition_events enable row level security;
+alter table requisition_attendance enable row level security;
 
 -- employee_master: anyone authenticated can read their own row
 -- (needed to resolve role/store/cost-center after login)
@@ -177,6 +205,46 @@ create policy "read events for visible requisitions" on requisition_events
 drop policy if exists "insert own events" on requisition_events;
 create policy "insert own events" on requisition_events
   for insert with check (auth.jwt() ->> 'email' = actor_email);
+
+-- requisition_attendance: store manager can mark/view attendance for their
+-- own requisitions, but only once approved (matches "responsibility of
+-- manager and HR" once hiring is actually sanctioned)
+drop policy if exists "store manager marks own attendance" on requisition_attendance;
+create policy "store manager marks own attendance" on requisition_attendance
+  for all using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+    )
+  )
+  with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+    )
+  );
+
+-- HR/admin: full access to attendance too, per the brief
+drop policy if exists "hr admin full access to attendance" on requisition_attendance;
+create policy "hr admin full access to attendance" on requisition_attendance
+  for all using (
+    exists (
+      select 1 from employee_master em
+      where em.email = auth.jwt() ->> 'email'
+        and em.role in ('hr','admin')
+    )
+  )
+  with check (
+    exists (
+      select 1 from employee_master em
+      where em.email = auth.jwt() ->> 'email'
+        and em.role in ('hr','admin')
+    )
+  );
 
 -- ------------------------------------------------------------
 -- Sample seed data — DELETE before going live. Useful for

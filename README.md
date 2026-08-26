@@ -74,18 +74,29 @@ git push -u origin main
 Then import the repo in Vercel and add the environment variables above.
 
 ## Notes / decisions worth knowing about
-- **Requisition granularity**: one form submission = one worker type = one
-  requisition ID. If a store manager needs 3 Florists and 2 Chefs, that's
-  two separate requisitions. Say the word if you actually want a single
-  requisition to bundle multiple roles — it's a schema change (a
-  `requisition_lines` child table), not a huge one, but better to confirm
-  before HOD/HR views are built on top of the current shape.
-- **Auth**: passwordless magic link, gated by an active `employee_master`
-  row. Someone authenticated but not (yet) in `employee_master` sees a
-  "not yet set up" message rather than an error.
+- **Requisition granularity**: you can select several worker types in one
+  submission (headcount + rate set per role), but each role still becomes
+  its own requisition with its own auto-generated ID — grouped under a
+  shared `batch_id` so they were raised together, but independently
+  approvable/rejectable by the HOD later. One consolidated email goes out
+  per batch rather than one email per role.
+- **Attendance**: once a requisition is approved, the store manager (or
+  HR) can mark daily headcount actually present, per day in the
+  requisition's date range, against the sanctioned `number_of_workers`.
+  Lives at `/requisitions/[id]/attendance`, linked from the requisition
+  detail page. Schema: `requisition_attendance`, one row per
+  requisition+date.
+- **Auth**: Google sign-in (see login page), gated by an active
+  `employee_master` row. Someone authenticated but not (yet) in
+  `employee_master` sees a "not yet set up" message rather than an error.
 - **Non-store-manager logins**: HOD/HR/admin accounts can log in already —
   they just see a "your view is coming soon" placeholder until we build
   their dashboards next.
+- **Preview mode**: `lib/mockData.js` currently has `PREVIEW_MODE = true`,
+  which bypasses auth entirely and serves mock requisitions/attendance so
+  the UI can be reviewed with zero Supabase setup. Flip it to `false` once
+  Supabase + Google OAuth are configured — every real code path is already
+  wired up underneath it.
 - Google Fonts (Fraunces/Inter) are loaded via `next/font/google`, which
   needs network access at build time — this fails in fully offline
   sandboxes but works normally on Vercel and in local dev with internet.

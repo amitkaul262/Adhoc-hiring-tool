@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import RoleChip from "@/components/RoleChip";
 import StatusBadge from "@/components/StatusBadge";
@@ -42,6 +43,14 @@ export default async function RequisitionDetailPage({ params }) {
           </h1>
           <StatusBadge status={requisition.status} />
         </div>
+
+        {requisition.status === "approved" && (
+          <div style={{ marginBottom: 24 }}>
+            <Link href={`/requisitions/${requisition.requisition_id}/attendance`} className="btn btn-secondary">
+              Mark attendance
+            </Link>
+          </div>
+        )}
 
         <div className="card" style={{ marginBottom: 24 }}>
           <div className="profile-grid">
