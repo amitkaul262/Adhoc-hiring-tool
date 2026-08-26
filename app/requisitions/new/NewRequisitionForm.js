@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 const WORKER_TYPES = ["Florist", "Helper", "Rider", "Chef", "Supervisor"];
 
@@ -26,8 +27,18 @@ function todayLocal() {
 
 export default function NewRequisitionForm({ action, employee }) {
   const [state, formAction] = useFormState(action, { error: null });
-  const [selectedRoles, setSelectedRoles] = useState([]); // ordered array of worker_type strings
-  const [details, setDetails] = useState({}); // { [worker_type]: { number_of_workers, tentative_rate } }
+  const searchParams = useSearchParams();
+  const prefillType = searchParams.get("type");
+  const prefillCount = searchParams.get("count");
+  const prefillRate = searchParams.get("rate");
+  const validPrefillType = WORKER_TYPES.includes(prefillType) ? prefillType : null;
+
+  const [selectedRoles, setSelectedRoles] = useState(() => (validPrefillType ? [validPrefillType] : []));
+  const [details, setDetails] = useState(() =>
+    validPrefillType
+      ? { [validPrefillType]: { number_of_workers: prefillCount || "", tentative_rate: prefillRate || "" } }
+      : {}
+  );
   const today = todayLocal();
 
   function toggleRole(type) {

@@ -465,6 +465,7 @@ p { line-height: 1.5; color: var(--ink-muted); }
 }
 .pill-active { background: var(--success-tint); color: var(--success); }
 .pill-inactive { background: #EDEFEA; color: var(--ink-faint); }
+.pill-inactive-warn { background: var(--danger-tint); color: var(--danger); }
 
 /* ---------- tabs (admin sections) ---------- */
 .tab-nav {
@@ -538,4 +539,75 @@ p { line-height: 1.5; color: var(--ink-muted); }
   text-align: center;
   color: var(--ink-faint);
   font-size: 13px;
+}
+
+/* ---------- KPI strip ---------- */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.kpi-label {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+
+/* ---------- filter bar ---------- */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+.filter-bar select, .filter-bar input {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 13px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.filter-bar .clear-filters {
+  font-size: 12px;
+  color: var(--ink-faint);
+  text-decoration: underline;
+}
+
+/* ---------- notification bell ---------- */
+.bell-link {
+  position: relative;
+  display: inline-flex;
+  color: #C7D2C9;
+  text-decoration: none;
+}
+.bell-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
 }

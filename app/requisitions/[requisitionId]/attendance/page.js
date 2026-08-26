@@ -84,6 +84,7 @@ export default async function AttendancePage({ params }) {
           dates={dates}
           existing={existing}
           sanctioned={requisition.number_of_workers}
+          requisitionId={requisition.requisition_id}
         />
       </div>
     </>

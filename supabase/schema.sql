@@ -356,3 +356,8 @@ drop policy if exists "admin manages employee records" on employee_master;
 create policy "admin manages employee records" on employee_master
   for all using (is_admin())
   with check (is_admin());
+
+-- ============================================================
+-- MIGRATION 3 — Reminders, bulk actions support
+-- ============================================================
+alter table requisitions add column if not exists last_reminder_at timestamptz;

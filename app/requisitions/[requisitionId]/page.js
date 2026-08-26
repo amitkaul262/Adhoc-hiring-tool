@@ -66,6 +66,11 @@ export default async function RequisitionDetailPage({ params }) {
     requisition.status === "approved" &&
     !requisition.vendor_id;
 
+  const canCloneRequisition =
+    employee?.role === "store_manager" && employee.email === requisition.raised_by_email;
+
+  const cloneUrl = `/requisitions/new?type=${encodeURIComponent(requisition.worker_type)}&count=${requisition.number_of_workers}&rate=${requisition.tentative_rate}`;
+
   const approveAction = decideRequisition.bind(null, requisition.requisition_id, employee?.email, "approved");
   const rejectAction = decideRequisition.bind(null, requisition.requisition_id, employee?.email, "rejected");
   const vendorAction = assignVendor.bind(null, requisition.requisition_id, employee?.email);
@@ -83,11 +88,18 @@ export default async function RequisitionDetailPage({ params }) {
           <StatusBadge status={requisition.status} />
         </div>
 
-        {requisition.status === "approved" && (
-          <div style={{ marginBottom: 24, display: "flex", gap: 12 }}>
-            <Link href={`/requisitions/${requisition.requisition_id}/attendance`} className="btn btn-secondary">
-              Mark attendance
-            </Link>
+        {(requisition.status === "approved" || canCloneRequisition) && (
+          <div style={{ marginBottom: 24, display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {requisition.status === "approved" && (
+              <Link href={`/requisitions/${requisition.requisition_id}/attendance`} className="btn btn-secondary">
+                Mark attendance
+              </Link>
+            )}
+            {canCloneRequisition && (
+              <Link href={cloneUrl} className="btn btn-secondary">
+                Raise similar
+              </Link>
+            )}
           </div>
         )}
 

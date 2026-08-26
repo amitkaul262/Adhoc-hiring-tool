@@ -4,7 +4,7 @@ import HodDashboard from "./HodDashboard";
 import HrDashboard from "./HrDashboard";
 import { getCurrentEmployee } from "@/lib/currentUser";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }) {
   const { user, employee } = await getCurrentEmployee();
 
   if (!employee) {
@@ -29,7 +29,9 @@ export default async function DashboardPage() {
       <Navbar employee={employee} />
       {employee.role === "store_manager" && <StoreManagerDashboard employee={employee} />}
       {employee.role === "hod" && <HodDashboard employee={employee} />}
-      {(employee.role === "hr" || employee.role === "admin") && <HrDashboard employee={employee} />}
+      {(employee.role === "hr" || employee.role === "admin") && (
+        <HrDashboard employee={employee} searchParams={searchParams} />
+      )}
     </>
   );
 }

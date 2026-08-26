@@ -24,25 +24,44 @@ email relay (free, no SMTP/App Password) · deployed on Vercel.
 
 **HOD** (`/dashboard`)
 - Queue of requisitions routed to them, split into "awaiting your
-  approval" and "past decisions."
-- Approve or reject straight from the requisition detail page — reject
-  requires a reason, approve's is optional. Either way triggers an email
-  back to the store manager (cc HR).
+  approval" and "past decisions" — with a KPI strip (awaiting count,
+  approved, rejected, average decision time) and an age badge per pending
+  requisition ("2 days waiting").
+- **Bulk approve**: select several pending requisitions via checkboxes,
+  add one optional shared note, approve them all in one action. Individual
+  approve/reject with a specific reason still happens on the requisition
+  detail page — bulk is for approve only, since rejections usually need
+  their own reason per item.
+- Either path triggers an email back to the store manager (cc HR).
 
 **HR** (`/dashboard`)
-- Org-wide view of every requisition, not just their own store/function.
-- "Needs a vendor" queue at the top — every approved requisition without a
-  vendor assigned yet, with an inline dropdown to assign one right there.
-- Full requisition list below for general visibility.
+- Org-wide view of every requisition, with a KPI strip and a **filter
+  bar** (status, role, store, function, date range) that persists in the
+  URL — shareable, bookmarkable, survives a refresh.
+- "Needs a vendor" queue at the top, filters apply here too.
+- **Export CSV** of the current filtered list.
+- Link to the **audit log** — a single searchable timeline of every event
+  across every requisition (raised, notified, approved, rejected, vendor
+  assigned, reminder sent), filterable by event type and actor.
 - (Admin users see this same view, plus a link into the admin panel.)
 
 **Admin** (`/admin`)
-- **People** — add/edit anyone in `employee_master`: their role
-  (store manager / HOD / HR / admin), store, cost center, function, and
-  which HOD their requisitions route to. Replaces hand-written SQL inserts
-  entirely.
-- **Vendors** — add/edit the manpower suppliers HR picks from when
-  assigning headcount. Name, contact info, active/inactive.
+- **People** — add/edit anyone in `employee_master`.
+- **Vendors** — add/edit manpower suppliers.
+
+**Store Manager** (`/dashboard`)
+- Profile card, multi-role raise-requisition form, own requisition
+  history, attendance register.
+- **Clone**: "Raise similar" on a past requisition prefills the form with
+  the same role/rate/headcount — just the dates need changing.
+
+**Everyone**
+- **Notification bell** in the nav bar — shows a live count of items
+  needing your specific action (pending approvals for HOD, unassigned
+  vendors for HR/admin), links straight to the relevant queue.
+- **Auto-reminders**: a daily background job (`/api/cron/reminders`, see
+  Setup) emails the HOD (cc HR) for any requisition still pending after
+  24h, and won't re-remind the same one again within another 24h.
 
 ## Setup
 
@@ -80,6 +99,11 @@ in Vercel → Project → Settings → Environment Variables.
   top of that file, then paste its `/exec` URL and your chosen secret
   here (same secret goes into the script's `SHARED_SECRET` property).
 - `HR_TEAM_EMAILS` — comma-separated, cc'd on every requisition email.
+- `CRON_SECRET` — any random string. Set it in Vercel, and Vercel
+  automatically sends it as the `Authorization: Bearer <value>` header
+  when it triggers `/api/cron/reminders` on schedule — this is what stops
+  a stranger from hitting that URL directly and spamming reminder emails.
+  The route rejects any request without a matching header.
 
 ### 3. Run locally
 ```bash
@@ -126,4 +150,14 @@ out for a later pass. The schema already captures what reports will need
 (`vendor_id` on every requisition, `function`/`cost_center` denormalized
 onto every row, full `requisition_events` audit trail) — so when it's
 time, it's a reporting layer on top of existing data, not a data model
-change.
+change. The new audit log page and CSV exports cover a good chunk of
+ad-hoc reporting needs in the meantime.
+
+## Cron jobs — a plan-specific note
+Vercel's free Hobby plan only allows cron jobs to run **once per day** —
+anything more frequent fails at deploy time, not silently. The reminders
+job is set to once daily (`0 9 * * *`, 9am UTC), which is also genuinely
+all it needs given the 24h reminder-dedup logic already in the route. If
+you're on Vercel Pro and want tighter timing, you can safely change the
+schedule in `vercel.json` — the route's own dedup logic means running it
+more often just means "check sooner," not "spam more."

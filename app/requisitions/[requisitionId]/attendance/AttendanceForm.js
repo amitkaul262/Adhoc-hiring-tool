@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import ExportCsvButton from "@/components/ExportCsvButton";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -28,7 +29,7 @@ function rowStatus(present, sanctioned) {
   return { text: "Partial", cls: "pill" };
 }
 
-export default function AttendanceForm({ action, dates, existing, sanctioned }) {
+export default function AttendanceForm({ action, dates, existing, sanctioned, requisitionId }) {
   const [state, formAction] = useFormState(action, { error: null, success: false });
   const [values, setValues] = useState(() =>
     Object.fromEntries(dates.map((d) => [d, existing[d] !== undefined ? String(existing[d]) : ""]))
@@ -111,8 +112,25 @@ export default function AttendanceForm({ action, dates, existing, sanctioned }) 
         </table>
       </div>
 
-      <div style={{ padding: "20px 24px" }}>
+      <div style={{ padding: "20px 24px", display: "flex", gap: 12 }}>
         <SubmitButton />
+        <ExportCsvButton
+          filename={`${requisitionId || "attendance"}-register.csv`}
+          columns={[
+            { label: "Date", get: (r) => r.date },
+            { label: "Day", get: (r) => r.weekday },
+            { label: "Present", get: (r) => r.present },
+            { label: "Absent", get: (r) => r.absent },
+            { label: "Status", get: (r) => r.status },
+          ]}
+          rows={dates.map((date) => {
+            const { weekday, label } = dayMeta(date);
+            const v = values[date];
+            const absent = v !== "" ? Math.max(sanctioned - Number(v), 0) : "";
+            return { date: label, weekday, present: v, absent, status: rowStatus(v, sanctioned).text };
+          })}
+          label="Export CSV"
+        />
       </div>
     </form>
   );

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import BackLink from "@/components/BackLink";
 import NewRequisitionForm from "./NewRequisitionForm";
@@ -21,7 +22,9 @@ export default async function NewRequisitionPage() {
         <BackLink />
         <span className="eyebrow">New requisition</span>
         <h1 style={{ marginBottom: 24 }}>Raise adhoc hiring requisition</h1>
-        <NewRequisitionForm action={boundAction} employee={employee} />
+        <Suspense fallback={null}>
+          <NewRequisitionForm action={boundAction} employee={employee} />
+        </Suspense>
       </div>
     </>
   );
