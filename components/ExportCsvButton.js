@@ -6,10 +6,15 @@ function toCsvValue(v) {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
+// columns: [{ key: "field_name", label: "Column Header" }, ...] — plain
+// data only, never functions. This component (and its columns prop) may
+// be used from a Server Component tree, and functions can't cross the
+// server/client boundary — looking values up by key keeps this safe
+// regardless of where it's called from.
 function buildCsv(columns, rows) {
   const header = columns.map((c) => toCsvValue(c.label)).join(",");
   const body = rows
-    .map((row) => columns.map((c) => toCsvValue(c.get(row))).join(","))
+    .map((row) => columns.map((c) => toCsvValue(row[c.key])).join(","))
     .join("\n");
   return `${header}\n${body}`;
 }

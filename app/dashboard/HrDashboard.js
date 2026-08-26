@@ -9,17 +9,17 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { PREVIEW_MODE, MOCK_REQUISITIONS } from "@/lib/mockData";
 
 const CSV_COLUMNS = [
-  { label: "Requisition ID", get: (r) => r.requisition_id },
-  { label: "Worker Type", get: (r) => r.worker_type },
-  { label: "Workers", get: (r) => r.number_of_workers },
-  { label: "Rate/day", get: (r) => r.tentative_rate },
-  { label: "Store", get: (r) => r.store_name },
-  { label: "Function", get: (r) => r.function },
-  { label: "Status", get: (r) => r.status },
-  { label: "Raised By", get: (r) => r.raised_by_email },
-  { label: "HOD", get: (r) => r.hod_email },
-  { label: "From", get: (r) => r.from_date },
-  { label: "To", get: (r) => r.to_date },
+  { key: "requisition_id", label: "Requisition ID" },
+  { key: "worker_type", label: "Worker Type" },
+  { key: "number_of_workers", label: "Workers" },
+  { key: "tentative_rate", label: "Rate/day" },
+  { key: "store_name", label: "Store" },
+  { key: "function", label: "Function" },
+  { key: "status", label: "Status" },
+  { key: "raised_by_email", label: "Raised By" },
+  { key: "hod_email", label: "HOD" },
+  { key: "from_date", label: "From" },
+  { key: "to_date", label: "To" },
 ];
 
 function applyFilters(rows, params) {

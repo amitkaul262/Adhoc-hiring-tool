@@ -117,11 +117,11 @@ export default function AttendanceForm({ action, dates, existing, sanctioned, re
         <ExportCsvButton
           filename={`${requisitionId || "attendance"}-register.csv`}
           columns={[
-            { label: "Date", get: (r) => r.date },
-            { label: "Day", get: (r) => r.weekday },
-            { label: "Present", get: (r) => r.present },
-            { label: "Absent", get: (r) => r.absent },
-            { label: "Status", get: (r) => r.status },
+            { key: "date", label: "Date" },
+            { key: "weekday", label: "Day" },
+            { key: "present", label: "Present" },
+            { key: "absent", label: "Absent" },
+            { key: "status", label: "Status" },
           ]}
           rows={dates.map((date) => {
             const { weekday, label } = dayMeta(date);
