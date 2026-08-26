@@ -1,0 +1,332 @@
+/* ===========================================================
+   Design tokens
+   A working ops tool, not a marketing page — restraint first,
+   with the role-chip system as the one signature element that
+   recurs everywhere (login, dashboard, forms, emails).
+   =========================================================== */
+:root {
+  --bg: #F6F8F5;
+  --surface: #FFFFFF;
+  --border: #DDE3DB;
+  --ink: #16241C;
+  --ink-muted: #5B6B60;
+  --ink-faint: #8A968E;
+
+  --primary: #2F6B4F;
+  --primary-dark: #1F4D38;
+  --primary-tint: #E7F0EA;
+
+  --warn: #D98E2B;
+  --warn-tint: #FBF0DD;
+
+  --danger: #B4432F;
+  --danger-tint: #F9E7E3;
+
+  --success: #1C6F55;
+  --success-tint: #E4F2ED;
+
+  --role-florist: #2F6B4F;
+  --role-helper: #D98E2B;
+  --role-rider: #1C6FA8;
+  --role-chef: #B4432F;
+  --role-supervisor: #6B4C9A;
+
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow: 0 1px 2px rgba(22, 36, 28, 0.06), 0 4px 16px rgba(22, 36, 28, 0.04);
+
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  padding: 0;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+button, input, select, textarea { font-family: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* ---------- layout shell ---------- */
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.navbar-brand {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.navbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: #C7D2C9;
+}
+
+.navbar-meta form { margin: 0; }
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #C7D2C9;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.container {
+  max-width: 880px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+  flex: 1;
+}
+
+/* ---------- typography ---------- */
+h1, h2, h3 { font-family: var(--font-display); color: var(--ink); margin: 0; }
+h1 { font-size: 28px; font-weight: 600; }
+h2 { font-size: 20px; font-weight: 600; }
+p { line-height: 1.5; color: var(--ink-muted); }
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+/* ---------- cards ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.profile-field .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+
+.profile-field .value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ---------- role chips (the signature element) ---------- */
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+.role-chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.85);
+}
+.role-Florist { background: var(--role-florist); }
+.role-Helper { background: var(--role-helper); }
+.role-Rider { background: var(--role-rider); }
+.role-Chef { background: var(--role-chef); }
+.role-Supervisor { background: var(--role-supervisor); }
+
+/* ---------- status badges ---------- */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.status-pending_hod_approval { background: var(--warn-tint); color: #8A5A11; }
+.status-approved { background: var(--success-tint); color: var(--success); }
+.status-rejected { background: var(--danger-tint); color: var(--danger); }
+.status-cancelled { background: #EDEFEA; color: var(--ink-faint); }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:disabled { background: #A9BBAE; cursor: not-allowed; }
+.btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--border); }
+.btn-secondary:hover { border-color: var(--ink-faint); }
+
+/* ---------- forms ---------- */
+.field { margin-bottom: 18px; }
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.field .hint { font-size: 12px; color: var(--ink-faint); margin-top: 4px; }
+.field input, .field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface);
+}
+.field input:focus, .field select:focus { border-color: var(--primary); }
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.role-select {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+}
+.role-option {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 10px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+.role-option[data-selected="true"] {
+  border-color: var(--role-color, var(--primary));
+  background: color-mix(in srgb, var(--role-color, var(--primary)) 12%, white);
+  color: var(--ink);
+}
+
+.form-error {
+  background: var(--danger-tint);
+  color: var(--danger);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+
+/* ---------- table ---------- */
+.req-table { width: 100%; border-collapse: collapse; }
+.req-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  padding: 0 12px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.req-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #EEF1ED;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.req-table tr:last-child td { border-bottom: none; }
+.req-id { font-weight: 600; color: var(--ink); }
+.req-table a { text-decoration: none; }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--ink-faint);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ---------- login ---------- */
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.login-card { max-width: 380px; width: 100%; text-align: center; }
+.login-mark {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  margin: 0 auto 20px;
+}
