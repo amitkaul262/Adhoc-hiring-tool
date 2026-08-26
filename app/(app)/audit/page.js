@@ -65,7 +65,7 @@ export default async function AuditLogPage({ searchParams }) {
                     {events.map((e) => (
                       <ClickableRow key={e.id} href={`/requisitions/${e.requisition_id}`}>
                         <td style={{ fontSize: 12, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>
-                          {new Date(e.created_at).toLocaleString("en-IN")}
+                          {new Date(e.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
                         </td>
                         <td>{EVENT_LABELS[e.event_type] || e.event_type}</td>
                         <td>

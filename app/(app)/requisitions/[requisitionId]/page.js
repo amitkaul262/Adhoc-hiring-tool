@@ -145,7 +145,7 @@ export default async function RequisitionDetailPage({ params }) {
                   <strong>{eventLabel(e.event_type)}</strong>
                   {e.actor_email ? ` — ${e.actor_email}` : ""}
                   <span style={{ color: "var(--ink-faint)", marginLeft: 8 }}>
-                    {new Date(e.created_at).toLocaleString("en-IN")}
+                    {new Date(e.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
                   </span>
                   {e.remarks && <div style={{ color: "var(--ink-muted)" }}>{e.remarks}</div>}
                 </li>
@@ -170,7 +170,7 @@ function Field({ label, value }) {
 
 function formatDate(d) {
   if (!d) return "-";
-  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
 }
 
 function eventLabel(type) {

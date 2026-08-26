@@ -48,5 +48,5 @@ export default function RequisitionTable({ requisitions }) {
 
 function formatDate(d) {
   if (!d) return "-";
-  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", timeZone: "UTC" });
 }

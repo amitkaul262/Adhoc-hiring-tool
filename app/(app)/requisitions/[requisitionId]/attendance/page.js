@@ -86,7 +86,7 @@ export default async function AttendancePage({ params }) {
             </p>
             <p style={{ margin: "4px 0 0", fontSize: 13 }}>
               The grace period after {requisition.to_date} passed without attendance being fully marked.
-              {requisition.attendance_frozen_at && ` Locked on ${new Date(requisition.attendance_frozen_at).toLocaleDateString("en-IN")}.`}
+              {requisition.attendance_frozen_at && ` Locked on ${new Date(requisition.attendance_frozen_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}.`}
             </p>
             {employee.role === "admin" && (
               <div style={{ marginTop: 12 }}>
@@ -109,6 +109,6 @@ export default async function AttendancePage({ params }) {
 }
 
 function formatRange(from, to) {
-  const opts = { day: "2-digit", month: "short" };
+  const opts = { day: "2-digit", month: "short", timeZone: "UTC" };
   return `${new Date(from).toLocaleDateString("en-IN", opts)} – ${new Date(to).toLocaleDateString("en-IN", opts)}`;
 }
