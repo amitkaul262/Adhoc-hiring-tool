@@ -16,11 +16,19 @@ function SubmitButton({ roleCount }) {
   );
 }
 
+// Local calendar date, not UTC — new Date().toISOString() can show
+// yesterday's date during early-morning IST hours since it converts to
+// UTC first, which would wrongly let someone pick a past "from" date.
+function todayLocal() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
 export default function NewRequisitionForm({ action, employee }) {
   const [state, formAction] = useFormState(action, { error: null });
   const [selectedRoles, setSelectedRoles] = useState([]); // ordered array of worker_type strings
   const [details, setDetails] = useState({}); // { [worker_type]: { number_of_workers, tentative_rate } }
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocal();
 
   function toggleRole(type) {
     if (selectedRoles.includes(type)) {
@@ -79,13 +87,17 @@ export default function NewRequisitionForm({ action, employee }) {
       {selectedRoles.length > 0 && (
         <div className="field">
           <label>Headcount &amp; rate per role</label>
+          <div className="role-detail-header">
+            <span>Role</span>
+            <span>Workers</span>
+            <span>Rate (₹/day)</span>
+          </div>
           {selectedRoles.map((type) => (
             <div key={type} className="role-detail-row">
               <span className={`role-chip role-${type}`}>{type}</span>
               <input
                 type="number"
                 min="1"
-                placeholder="Workers"
                 aria-label={`Number of ${type} workers`}
                 value={details[type]?.number_of_workers ?? ""}
                 onChange={(e) => updateDetail(type, "number_of_workers", e.target.value)}
@@ -95,7 +107,6 @@ export default function NewRequisitionForm({ action, employee }) {
                 type="number"
                 min="1"
                 step="0.01"
-                placeholder="₹ / day"
                 aria-label={`Tentative rate for ${type}`}
                 value={details[type]?.tentative_rate ?? ""}
                 onChange={(e) => updateDetail(type, "tentative_rate", e.target.value)}

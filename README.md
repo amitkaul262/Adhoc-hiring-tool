@@ -17,7 +17,10 @@ email relay (free, no SMTP/App Password) · deployed on Vercel.
   gets its own headcount/rate), one shared date range, submitted as a
   batch but saved as independent requisitions.
 - Their own requisition history with live status.
-- Mark daily attendance on approved requisitions.
+- **Mark daily attendance on approved requisitions** — a proper register:
+  date, day of week, weekend rows shaded, present/absent per day, a live
+  status pill (Full / Partial / None / Not marked), and a summary footer
+  (days marked, total person-days present, attendance rate).
 
 **HOD** (`/dashboard`)
 - Queue of requisitions routed to them, split into "awaiting your

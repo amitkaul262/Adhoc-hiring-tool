@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import { PREVIEW_MODE } from "@/lib/mockData";
@@ -17,7 +18,7 @@ export default function Navbar({ employee }) {
 
   return (
     <div className="navbar">
-      <span className="navbar-brand">FNP Adhoc Hiring</span>
+      <Link href="/dashboard" className="navbar-brand">FNP Adhoc Hiring</Link>
       <div className="navbar-meta">
         {employee && (
           <span>

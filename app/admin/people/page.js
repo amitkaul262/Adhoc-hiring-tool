@@ -20,6 +20,7 @@ export default async function AdminPeoplePage() {
       <div className="card" style={{ padding: 0 }}>
         <div style={{ padding: people?.length ? "8px 16px" : 0 }}>
           {people && people.length > 0 ? (
+            <div className="table-scroll">
             <table className="req-table">
               <thead>
                 <tr>
@@ -50,6 +51,7 @@ export default async function AdminPeoplePage() {
                 ))}
               </tbody>
             </table>
+            </div>
           ) : (
             <div className="queue-empty">No one added yet.</div>
           )}

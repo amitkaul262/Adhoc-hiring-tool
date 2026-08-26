@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import BackLink from "@/components/BackLink";
 import NewRequisitionForm from "./NewRequisitionForm";
 import { createRequisition } from "./actions";
 import { getCurrentEmployee } from "@/lib/currentUser";
@@ -17,6 +18,7 @@ export default async function NewRequisitionPage() {
     <>
       <Navbar employee={employee} />
       <div className="container" style={{ maxWidth: 560 }}>
+        <BackLink />
         <span className="eyebrow">New requisition</span>
         <h1 style={{ marginBottom: 24 }}>Raise adhoc hiring requisition</h1>
         <NewRequisitionForm action={boundAction} employee={employee} />

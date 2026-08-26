@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import AdminTabs from "@/components/AdminTabs";
+import BackLink from "@/components/BackLink";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { redirect } from "next/navigation";
 
@@ -14,6 +15,7 @@ export default async function AdminLayout({ children }) {
     <>
       <Navbar employee={employee} />
       <div className="container">
+        <BackLink />
         <span className="eyebrow">Admin</span>
         <h1 style={{ marginBottom: 20 }}>Manage the tool</h1>
         <AdminTabs />

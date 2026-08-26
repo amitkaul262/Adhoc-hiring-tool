@@ -9,6 +9,7 @@ export default function HrRequisitionsTable({ requisitions, vendorsById, activeV
   }
 
   return (
+    <div className="table-scroll">
     <table className="req-table">
       <thead>
         <tr>
@@ -45,5 +46,6 @@ export default function HrRequisitionsTable({ requisitions, vendorsById, activeV
         ))}
       </tbody>
     </table>
+    </div>
   );
 }

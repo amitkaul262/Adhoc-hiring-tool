@@ -14,6 +14,7 @@ export default async function AdminVendorsPage() {
       <div className="card" style={{ padding: 0 }}>
         <div style={{ padding: vendors?.length ? "8px 16px" : 0 }}>
           {vendors && vendors.length > 0 ? (
+            <div className="table-scroll">
             <table className="req-table">
               <thead>
                 <tr>
@@ -40,6 +41,7 @@ export default async function AdminVendorsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           ) : (
             <div className="queue-empty">No vendors added yet.</div>
           )}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import RoleChip from "@/components/RoleChip";
 import StatusBadge from "@/components/StatusBadge";
+import BackLink from "@/components/BackLink";
 import VendorAssignForm from "@/components/VendorAssignForm";
 import DecisionForms from "./DecisionForms";
 import { decideRequisition } from "./decisionActions";
@@ -73,6 +74,7 @@ export default async function RequisitionDetailPage({ params }) {
     <>
       <Navbar employee={employee} />
       <div className="container" style={{ maxWidth: 640 }}>
+        <BackLink />
         <span className="eyebrow">{requisition.requisition_id}</span>
         <div className="section-header">
           <h1>

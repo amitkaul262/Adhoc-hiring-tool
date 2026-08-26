@@ -12,6 +12,7 @@ export default function RequisitionTable({ requisitions }) {
   }
 
   return (
+    <div className="table-scroll">
     <table className="req-table">
       <thead>
         <tr>
@@ -40,6 +41,7 @@ export default function RequisitionTable({ requisitions }) {
         ))}
       </tbody>
     </table>
+    </div>
   );
 }
 

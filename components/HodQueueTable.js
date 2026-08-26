@@ -8,6 +8,7 @@ export default function HodQueueTable({ requisitions, emptyLabel }) {
   }
 
   return (
+    <div className="table-scroll">
     <table className="req-table">
       <thead>
         <tr>
@@ -34,6 +35,7 @@ export default function HodQueueTable({ requisitions, emptyLabel }) {
         ))}
       </tbody>
     </table>
+    </div>
   );
 }
 
