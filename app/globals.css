@@ -544,7 +544,16 @@ p { line-height: 1.5; color: var(--ink-muted); }
   -webkit-mask-image: radial-gradient(circle at 30% 30%, black, transparent 70%);
   mask-image: radial-gradient(circle at 30% 30%, black, transparent 70%);
 }
-.login-left-logo { height: 30px; width: auto; position: relative; z-index: 1; }
+.login-left-logo {
+  height: 30px;
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+  align-self: flex-start;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
 
 .login-headline { position: relative; z-index: 1; max-width: 460px; }
 .login-headline h1 {
