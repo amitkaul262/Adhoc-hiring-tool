@@ -7,6 +7,7 @@ import { sendRequisitionsRaisedEmail } from "@/lib/email";
 import { PREVIEW_MODE } from "@/lib/mockData";
 
 const WORKER_TYPES = ["Florist", "Helper", "Rider", "Chef", "Supervisor"];
+const REASONS = ["Festival / Occasion", "Manpower Shortage / Absenteeism", "Multiple Orders", "Other"];
 
 export async function createRequisition(employee, prevState, formData) {
   // PREVIEW MODE: there's no real Supabase project wired up yet, so don't
@@ -32,12 +33,20 @@ export async function createRequisition(employee, prevState, formData) {
 
   const from_date = formData.get("from_date");
   const to_date = formData.get("to_date");
+  const reason = formData.get("reason");
+  const reasonOther = (formData.get("reason_other") || "").toString().trim();
 
   if (!from_date || !to_date) {
     return { error: "Select both a from and a to date." };
   }
   if (to_date < from_date) {
     return { error: "The to date can't be before the from date." };
+  }
+  if (!REASONS.includes(reason)) {
+    return { error: "Select a reason for this requisition." };
+  }
+  if (reason === "Other" && !reasonOther) {
+    return { error: "Briefly describe the reason since you selected \"Other\"." };
   }
   if (!employee.reports_to_email) {
     return {
@@ -82,6 +91,8 @@ export async function createRequisition(employee, prevState, formData) {
     number_of_workers: Number(line.number_of_workers),
     from_date,
     to_date,
+    reason,
+    reason_other: reason === "Other" ? reasonOther : null,
     hod_email: employee.reports_to_email,
   }));
 

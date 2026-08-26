@@ -31,8 +31,10 @@ employee to show a shell for yet.
 - Profile card (store, cost center, function, reporting HOD) pulled from
   `employee_master`.
 - Raise a requisition — select one or several worker types at once (each
-  gets its own headcount/rate), one shared date range, submitted as a
-  batch but saved as independent requisitions.
+  gets its own headcount/rate), one shared date range, and a required
+  reason (Festival/Occasion, Manpower Shortage/Absenteeism, Multiple
+  Orders, or Other with free text) — submitted as a batch but saved as
+  independent requisitions, all sharing the same reason.
 - Their own requisition history with live status.
 - **Mark daily attendance on approved requisitions** — a proper register:
   date, day of week, weekend rows shaded, present/absent per day, a live

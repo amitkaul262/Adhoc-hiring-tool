@@ -388,3 +388,18 @@ alter table requisitions add column if not exists last_reminder_at timestamptz;
 alter table requisitions add column if not exists attendance_last_reminder_at timestamptz;
 alter table requisitions add column if not exists attendance_frozen boolean not null default false;
 alter table requisitions add column if not exists attendance_frozen_at timestamptz;
+
+-- ============================================================
+-- MIGRATION 5 — Reason for requisition
+-- ============================================================
+alter table requisitions add column if not exists reason text;
+alter table requisitions add column if not exists reason_other text;
+
+alter table requisitions drop constraint if exists requisitions_reason_check;
+alter table requisitions add constraint requisitions_reason_check
+  check (reason is null or reason in (
+    'Festival / Occasion',
+    'Manpower Shortage / Absenteeism',
+    'Multiple Orders',
+    'Other'
+  ));

@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 const WORKER_TYPES = ["Florist", "Helper", "Rider", "Chef", "Supervisor"];
+const REASONS = ["Festival / Occasion", "Manpower Shortage / Absenteeism", "Multiple Orders", "Other"];
 const STATUSES = [
   { value: "pending_hod_approval", label: "Pending approval" },
   { value: "approved", label: "Approved" },
@@ -21,7 +22,7 @@ export default function FilterBar({ stores = [], functions = [] }) {
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  const hasFilters = ["status", "worker_type", "store", "function", "from", "to"].some((k) => searchParams.get(k));
+  const hasFilters = ["status", "worker_type", "reason", "store", "function", "from", "to"].some((k) => searchParams.get(k));
 
   return (
     <div className="filter-bar">
@@ -33,6 +34,11 @@ export default function FilterBar({ stores = [], functions = [] }) {
       <select value={searchParams.get("worker_type") || ""} onChange={(e) => setParam("worker_type", e.target.value)}>
         <option value="">All roles</option>
         {WORKER_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+      </select>
+
+      <select value={searchParams.get("reason") || ""} onChange={(e) => setParam("reason", e.target.value)}>
+        <option value="">All reasons</option>
+        {REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
       </select>
 
       {stores.length > 0 && (

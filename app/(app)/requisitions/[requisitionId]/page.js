@@ -67,7 +67,7 @@ export default async function RequisitionDetailPage({ params }) {
   const canCloneRequisition =
     employee?.role === "store_manager" && employee.email === requisition.raised_by_email;
 
-  const cloneUrl = `/requisitions/new?type=${encodeURIComponent(requisition.worker_type)}&count=${requisition.number_of_workers}&rate=${requisition.tentative_rate}`;
+  const cloneUrl = `/requisitions/new?type=${encodeURIComponent(requisition.worker_type)}&count=${requisition.number_of_workers}&rate=${requisition.tentative_rate}&reason=${encodeURIComponent(requisition.reason || "")}`;
 
   const approveAction = decideRequisition.bind(null, requisition.requisition_id, employee?.email, "approved");
   const rejectAction = decideRequisition.bind(null, requisition.requisition_id, employee?.email, "rejected");
@@ -118,6 +118,7 @@ export default async function RequisitionDetailPage({ params }) {
             <Field label="To" value={formatDate(requisition.to_date)} />
             <Field label="Store" value={`${requisition.store_name || "-"} (${requisition.store_code || "-"})`} />
             <Field label="Cost center" value={requisition.cost_center || "-"} />
+            <Field label="Reason" value={requisition.reason === "Other" ? (requisition.reason_other || "Other") : (requisition.reason || "-")} />
             <Field label="Raised by" value={requisition.raised_by_email} />
             <Field label="Approver (HOD)" value={requisition.hod_email || "-"} />
             {requisition.vendor_id && <Field label="Vendor" value={vendor?.name || "Assigned"} />}

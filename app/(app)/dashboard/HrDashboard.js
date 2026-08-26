@@ -11,6 +11,7 @@ import { PREVIEW_MODE, MOCK_REQUISITIONS } from "@/lib/mockData";
 const CSV_COLUMNS = [
   { key: "requisition_id", label: "Requisition ID" },
   { key: "worker_type", label: "Worker Type" },
+  { key: "reason_display", label: "Reason" },
   { key: "number_of_workers", label: "Workers" },
   { key: "tentative_rate", label: "Rate/day" },
   { key: "store_name", label: "Store" },
@@ -26,6 +27,7 @@ function applyFilters(rows, params) {
   return rows.filter((r) => {
     if (params?.status && r.status !== params.status) return false;
     if (params?.worker_type && r.worker_type !== params.worker_type) return false;
+    if (params?.reason && r.reason !== params.reason) return false;
     if (params?.store && r.store_name !== params.store) return false;
     if (params?.function && r.function !== params.function) return false;
     if (params?.from && r.from_date < params.from) return false;
@@ -107,7 +109,14 @@ export default async function HrDashboard({ employee, searchParams }) {
 
       <div className="section-header">
         <h2>All requisitions</h2>
-        <ExportCsvButton filename="requisitions.csv" columns={CSV_COLUMNS} rows={filtered} />
+        <ExportCsvButton
+          filename="requisitions.csv"
+          columns={CSV_COLUMNS}
+          rows={filtered.map((r) => ({
+            ...r,
+            reason_display: r.reason === "Other" ? r.reason_other || "Other" : r.reason || "",
+          }))}
+        />
       </div>
       <div className="card" style={{ padding: 0 }}>
         <div style={{ padding: rest.length ? "8px 16px" : 0 }}>

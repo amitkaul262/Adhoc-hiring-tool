@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 const WORKER_TYPES = ["Florist", "Helper", "Rider", "Chef", "Supervisor"];
+const REASONS = ["Festival / Occasion", "Manpower Shortage / Absenteeism", "Multiple Orders", "Other"];
 
 function SubmitButton({ roleCount }) {
   const { pending } = useFormStatus();
@@ -31,6 +32,7 @@ export default function NewRequisitionForm({ action, employee }) {
   const prefillType = searchParams.get("type");
   const prefillCount = searchParams.get("count");
   const prefillRate = searchParams.get("rate");
+  const prefillReason = searchParams.get("reason");
   const validPrefillType = WORKER_TYPES.includes(prefillType) ? prefillType : null;
 
   const [selectedRoles, setSelectedRoles] = useState(() => (validPrefillType ? [validPrefillType] : []));
@@ -39,6 +41,8 @@ export default function NewRequisitionForm({ action, employee }) {
       ? { [validPrefillType]: { number_of_workers: prefillCount || "", tentative_rate: prefillRate || "" } }
       : {}
   );
+  const [reason, setReason] = useState(() => (REASONS.includes(prefillReason) ? prefillReason : ""));
+  const [reasonOther, setReasonOther] = useState("");
   const today = todayLocal();
 
   function toggleRole(type) {
@@ -93,6 +97,27 @@ export default function NewRequisitionForm({ action, employee }) {
           Select every role you need. Each one still becomes its own requisition with its own ID —
           this just lets you raise them together in one go.
         </p>
+      </div>
+
+      <div className="field">
+        <label htmlFor="reason">Reason for requisition</label>
+        <select id="reason" name="reason" value={reason} onChange={(e) => setReason(e.target.value)} required>
+          <option value="" disabled>Select a reason</option>
+          {REASONS.map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+        {reason === "Other" && (
+          <input
+            type="text"
+            name="reason_other"
+            placeholder="Briefly describe the reason"
+            value={reasonOther}
+            onChange={(e) => setReasonOther(e.target.value)}
+            style={{ marginTop: 8 }}
+            required
+          />
+        )}
       </div>
 
       {selectedRoles.length > 0 && (
