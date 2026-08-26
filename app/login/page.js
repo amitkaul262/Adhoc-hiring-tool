@@ -35,41 +35,55 @@ function LoginInner() {
   const displayError = status === "error" ? errorMsg : urlError;
 
   return (
-    <div className="login-wrap">
-      <div className="card login-card">
-        <Image src="/fnp-logo.png" alt="FNP" width={70} height={38} priority style={{ height: 32, width: "auto", marginBottom: 16 }} />
-        <h1 style={{ fontSize: 22, marginBottom: 6 }}>Adhoc Hiring</h1>
-        <p style={{ marginBottom: 6 }}>
-          Raise, approve, and track adhoc manpower requisitions — from the store floor to HR.
-        </p>
+    <div className="login-split">
+      <div className="login-panel-left">
+        <div className="login-dots" aria-hidden="true" />
+        <Image src="/fnp-logo.png" alt="FNP" width={70} height={38} priority className="login-left-logo" />
+
+        <div className="login-headline">
+          <h1>Adhoc Hiring, without the paper trail.</h1>
+          <p className="login-tagline">
+            For <strong>stores</strong> that need workers fast.<br />
+            For <strong>HODs</strong> who approve on the move.<br />
+            For <strong>HR</strong> that stays fully in the loop.
+          </p>
+        </div>
 
         <div className="login-roles">
           {ROLES.map((r) => (
             <span key={r} className={`role-chip role-${r}`}>{r}</span>
           ))}
         </div>
+      </div>
 
-        {displayError && (
-          <p className="form-error" style={{ textAlign: "left" }}>
-            {friendlyError(displayError)}
+      <div className="login-panel-right">
+        <div className="login-form-box">
+          <Image src="/fnp-logo.png" alt="FNP" width={70} height={38} priority style={{ height: 30, width: "auto", marginBottom: 24 }} />
+          <span className="eyebrow">Adhoc Hiring Tool</span>
+          <h2 style={{ marginTop: 6, marginBottom: 28 }}>Sign in to continue</h2>
+
+          {displayError && (
+            <p className="form-error" style={{ textAlign: "left" }}>
+              {friendlyError(displayError)}
+            </p>
+          )}
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ width: "100%", gap: 10 }}
+            onClick={handleGoogleSignIn}
+            disabled={status === "redirecting"}
+          >
+            <GoogleMark />
+            {status === "redirecting" ? "Redirecting to Google…" : "Continue with Google"}
+          </button>
+
+          <p style={{ marginTop: 20, fontSize: 12, color: "var(--ink-faint)" }}>
+            Use your FNP work email. If you sign in and don&apos;t see your dashboard, HR needs to
+            add you first.
           </p>
-        )}
-
-        <button
-          type="button"
-          className="btn btn-secondary"
-          style={{ width: "100%", gap: 10 }}
-          onClick={handleGoogleSignIn}
-          disabled={status === "redirecting"}
-        >
-          <GoogleMark />
-          {status === "redirecting" ? "Redirecting to Google…" : "Continue with Google"}
-        </button>
-
-        <p style={{ marginTop: 18, fontSize: 12, color: "var(--ink-faint)" }}>
-          Use your FNP work email. If you sign in and don&apos;t see your dashboard, HR needs to
-          add you first.
-        </p>
+        </div>
       </div>
     </div>
   );

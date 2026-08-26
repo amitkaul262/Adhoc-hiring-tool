@@ -1,8 +1,6 @@
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
 import RoleChip from "@/components/RoleChip";
 import StatusBadge from "@/components/StatusBadge";
-import BackLink from "@/components/BackLink";
 import VendorAssignForm from "@/components/VendorAssignForm";
 import DecisionForms from "./DecisionForms";
 import { decideRequisition } from "./decisionActions";
@@ -76,10 +74,7 @@ export default async function RequisitionDetailPage({ params }) {
   const vendorAction = assignVendor.bind(null, requisition.requisition_id, employee?.email);
 
   return (
-    <>
-      <Navbar employee={employee} />
-      <div className="container" style={{ maxWidth: 640 }}>
-        <BackLink />
+    <div className="container" style={{ maxWidth: 640 }}>
         <span className="eyebrow">{requisition.requisition_id}</span>
         <div className="section-header">
           <h1>
@@ -160,8 +155,7 @@ export default async function RequisitionDetailPage({ params }) {
             <p style={{ margin: 0 }}>No activity logged yet.</p>
           )}
         </div>
-      </div>
-    </>
+    </div>
   );
 }
 
@@ -187,6 +181,7 @@ function eventLabel(type) {
       hod_approved: "Approved by HOD",
       hod_rejected: "Rejected by HOD",
       vendor_assigned: "Vendor assigned",
+      reminder_sent: "Reminder sent",
       cancelled: "Cancelled",
     }[type] || type
   );

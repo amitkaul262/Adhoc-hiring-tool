@@ -8,6 +8,23 @@ loop by email throughout. Admin manages who's who without touching SQL.
 Next.js 14 (App Router) · Supabase (Postgres + Auth) · Google Apps Script
 email relay (free, no SMTP/App Password) · deployed on Vercel.
 
+## App shell
+A proper persistent sidebar + top bar, not a bare content page — routes
+requiring auth live under an `(app)` route group with a shared layout
+(`app/(app)/layout.js`) that:
+- Resolves the current employee once (memoized via React `cache()`, so
+  the shell and the page itself don't double-query Supabase).
+- Renders `TopBar` (logo, live notification bell, user avatar, sign out)
+  and `Sidebar` (role-aware nav — Home always, "Raise Requisition" for
+  store managers, "Audit Log" for HR/admin, "People"/"Vendors" for admin)
+  around whatever page is active.
+- Handles the "you're signed in but not provisioned" fallback centrally,
+  so individual pages don't each need that check.
+- Collapses the sidebar to icon-only on narrow/mobile screens.
+
+`/login` and `/auth/callback` sit outside this group, since there's no
+employee to show a shell for yet.
+
 ## Views, by role
 
 **Store Manager** (`/dashboard`)

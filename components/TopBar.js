@@ -30,13 +30,15 @@ async function getActionCount(employee) {
   return 0;
 }
 
-function bellHref(role) {
-  if (role === "hod") return "/dashboard";
-  if (role === "hr" || role === "admin") return "/dashboard";
-  return "/dashboard";
+function initials(name) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase();
 }
 
-export default async function Navbar({ employee }) {
+const ROLE_LABELS = { store_manager: "Store Manager", hod: "HOD", hr: "HR", admin: "Admin" };
+
+export default async function TopBar({ employee }) {
   async function signOut() {
     "use server";
     // PREVIEW MODE: no real session to sign out of yet. Set PREVIEW_MODE =
@@ -54,14 +56,16 @@ export default async function Navbar({ employee }) {
     : 0;
 
   return (
-    <div className="navbar">
-      <Link href="/dashboard" className="navbar-brand">
-        <Image src="/fnp-logo.png" alt="FNP" width={70} height={38} priority style={{ height: 28, width: "auto" }} />
+    <div className="topbar">
+      <Link href="/dashboard" className="topbar-brand">
+        <Image src="/fnp-logo.png" alt="FNP" width={70} height={38} priority style={{ height: 26, width: "auto" }} />
+        <span className="topbar-divider" />
         <span>Adhoc Hiring</span>
       </Link>
-      <div className="navbar-meta">
+
+      <div className="topbar-actions">
         {employee && actionCount > 0 && (
-          <Link href={bellHref(employee.role)} className="bell-link" aria-label={`${actionCount} items need your attention`}>
+          <Link href="/dashboard" className="bell-link" aria-label={`${actionCount} items need your attention`}>
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M10 2a5 5 0 0 0-5 5v3.2c0 .5-.2 1-.5 1.4L3 13.5c-.6.7-.1 1.8.8 1.8h12.4c.9 0 1.4-1.1.8-1.8l-1.5-1.9c-.3-.4-.5-.9-.5-1.4V7a5 5 0 0 0-5-5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
               <path d="M8 17a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -69,13 +73,24 @@ export default async function Navbar({ employee }) {
             <span className="bell-badge">{actionCount > 9 ? "9+" : actionCount}</span>
           </Link>
         )}
+
         {employee && (
-          <span>
-            {employee.full_name} · {employee.store_name || employee.function}
-          </span>
+          <div className="topbar-user">
+            <span className="topbar-avatar">{initials(employee.full_name)}</span>
+            <span className="topbar-user-text">
+              <strong>{employee.full_name}</strong>
+              <span>{ROLE_LABELS[employee.role] || employee.role} · {employee.store_name || employee.function || "—"}</span>
+            </span>
+          </div>
         )}
+
         <form action={signOut}>
-          <button type="submit" className="link-btn">Sign out</button>
+          <button type="submit" className="topbar-signout" aria-label="Sign out" title="Sign out">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <path d="M8 3H4.5A1.5 1.5 0 0 0 3 4.5v11A1.5 1.5 0 0 0 4.5 17H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M13 14l4-4-4-4M17 10H7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </form>
       </div>
     </div>

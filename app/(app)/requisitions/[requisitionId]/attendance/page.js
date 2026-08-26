@@ -1,5 +1,3 @@
-import Link from "next/link";
-import Navbar from "@/components/Navbar";
 import RoleChip from "@/components/RoleChip";
 import BackLink from "@/components/BackLink";
 import AttendanceForm from "./AttendanceForm";
@@ -65,9 +63,7 @@ export default async function AttendancePage({ params }) {
   const boundAction = markAttendance.bind(null, requisition.requisition_id, employee.email, dates);
 
   return (
-    <>
-      <Navbar employee={employee} />
-      <div className="container" style={{ maxWidth: 560 }}>
+    <div className="container" style={{ maxWidth: 560 }}>
         <BackLink href={`/requisitions/${requisition.requisition_id}`} label="Back to requisition" />
         <span className="eyebrow">{requisition.requisition_id}</span>
         <div className="section-header">
@@ -86,8 +82,7 @@ export default async function AttendancePage({ params }) {
           sanctioned={requisition.number_of_workers}
           requisitionId={requisition.requisition_id}
         />
-      </div>
-    </>
+    </div>
   );
 }
 

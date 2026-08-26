@@ -1,5 +1,3 @@
-import Navbar from "@/components/Navbar";
-import BackLink from "@/components/BackLink";
 import RoleChip from "@/components/RoleChip";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
@@ -18,7 +16,7 @@ const EVENT_LABELS = {
 
 export default async function AuditLogPage({ searchParams }) {
   const { employee } = await getCurrentEmployee();
-  if (!employee || !["hr", "admin"].includes(employee.role)) {
+  if (!["hr", "admin"].includes(employee.role)) {
     redirect("/dashboard");
   }
 
@@ -35,10 +33,7 @@ export default async function AuditLogPage({ searchParams }) {
   const { data: events } = await query;
 
   return (
-    <>
-      <Navbar employee={employee} />
-      <div className="container">
-        <BackLink />
+    <div className="container">
         <span className="eyebrow">HR</span>
         <div className="section-header">
           <h1>Audit log</h1>
@@ -89,7 +84,6 @@ export default async function AuditLogPage({ searchParams }) {
             )}
           </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 }
