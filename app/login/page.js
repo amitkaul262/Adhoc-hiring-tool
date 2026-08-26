@@ -2,7 +2,6 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 const ROLES = ["Florist", "Helper", "Rider", "Chef", "Supervisor"];
@@ -38,7 +37,7 @@ function LoginInner() {
     <div className="login-split">
       <div className="login-panel-left">
         <div className="login-dots" aria-hidden="true" />
-        <Image src="/fnp-logo.png" alt="FNP" width={70} height={38} priority className="login-left-logo" />
+        <img src="/fnp-logo.png" alt="FNP" className="login-left-logo" />
 
         <div className="login-headline">
           <h1>Adhoc Hiring, without the paper trail.</h1>
@@ -58,7 +57,7 @@ function LoginInner() {
 
       <div className="login-panel-right">
         <div className="login-form-box">
-          <Image src="/fnp-logo.png" alt="FNP" width={70} height={38} priority style={{ height: 30, width: "auto", marginBottom: 24 }} />
+          <img src="/fnp-logo.png" alt="FNP" style={{ height: 30, width: "auto", marginBottom: 24 }} />
           <span className="eyebrow">Adhoc Hiring Tool</span>
           <h2 style={{ marginTop: 6, marginBottom: 28 }}>Sign in to continue</h2>
 

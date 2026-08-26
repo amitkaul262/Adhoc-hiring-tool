@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import { PREVIEW_MODE } from "@/lib/mockData";
@@ -58,7 +57,7 @@ export default async function TopBar({ employee }) {
   return (
     <div className="topbar">
       <Link href="/dashboard" className="topbar-brand">
-        <Image src="/fnp-logo.png" alt="FNP" width={70} height={38} priority style={{ height: 26, width: "auto" }} />
+        <img src="/fnp-logo.png" alt="FNP" style={{ height: 26, width: "auto" }} />
         <span className="topbar-divider" />
         <span>Adhoc Hiring</span>
       </Link>
