@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import RequisitionTable from "@/components/RequisitionTable";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { PREVIEW_MODE, MOCK_REQUISITIONS } from "@/lib/mockData";
 
 export default async function DashboardPage() {
   const { user, employee } = await getCurrentEmployee();
@@ -41,12 +42,19 @@ export default async function DashboardPage() {
     );
   }
 
-  const supabase = createSupabaseServerClient();
-  const { data: requisitions } = await supabase
-    .from("requisitions")
-    .select("*")
-    .eq("raised_by_email", employee.email)
-    .order("created_at", { ascending: false });
+  // PREVIEW MODE: sample data instead of a real Supabase query — see
+  // lib/mockData.js. Set PREVIEW_MODE = false there to restore this query.
+  let requisitions;
+  if (PREVIEW_MODE) {
+    requisitions = MOCK_REQUISITIONS;
+  } else {
+    const supabase = createSupabaseServerClient();
+    ({ data: requisitions } = await supabase
+      .from("requisitions")
+      .select("*")
+      .eq("raised_by_email", employee.email)
+      .order("created_at", { ascending: false }));
+  }
 
   return (
     <>

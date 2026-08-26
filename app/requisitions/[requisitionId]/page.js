@@ -3,25 +3,33 @@ import RoleChip from "@/components/RoleChip";
 import StatusBadge from "@/components/StatusBadge";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { PREVIEW_MODE, MOCK_REQUISITIONS, MOCK_EVENTS } from "@/lib/mockData";
 import { notFound } from "next/navigation";
 
 export default async function RequisitionDetailPage({ params }) {
   const { employee } = await getCurrentEmployee();
-  const supabase = createSupabaseServerClient();
 
-  const { data: requisition } = await supabase
-    .from("requisitions")
-    .select("*")
-    .eq("requisition_id", params.requisitionId)
-    .single();
+  // PREVIEW MODE: sample data instead of a real Supabase query — see
+  // lib/mockData.js. Set PREVIEW_MODE = false there to restore these queries.
+  let requisition, events;
+  if (PREVIEW_MODE) {
+    requisition = MOCK_REQUISITIONS.find((r) => r.requisition_id === params.requisitionId);
+    events = MOCK_EVENTS[params.requisitionId] || [];
+  } else {
+    const supabase = createSupabaseServerClient();
+    ({ data: requisition } = await supabase
+      .from("requisitions")
+      .select("*")
+      .eq("requisition_id", params.requisitionId)
+      .single());
+    ({ data: events } = await supabase
+      .from("requisition_events")
+      .select("*")
+      .eq("requisition_id", params.requisitionId)
+      .order("created_at", { ascending: true }));
+  }
 
   if (!requisition) notFound();
-
-  const { data: events } = await supabase
-    .from("requisition_events")
-    .select("*")
-    .eq("requisition_id", params.requisitionId)
-    .order("created_at", { ascending: true });
 
   return (
     <>

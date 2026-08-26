@@ -1,9 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
+import { PREVIEW_MODE } from "@/lib/mockData";
 
 // Keeps the Supabase auth session fresh on every request and guards
 // everything except the login and auth-callback routes.
 export async function middleware(request) {
+  // PREVIEW MODE: let every route through with no auth check, so the UI
+  // can be reviewed without Supabase/Google sign-in configured yet.
+  // Set PREVIEW_MODE = false in lib/mockData.js to restore the guard below.
+  if (PREVIEW_MODE) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({ request: { headers: request.headers } });
 
   const supabase = createServerClient(

@@ -3,10 +3,21 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { sendRequisitionRaisedEmail } from "@/lib/email";
+import { PREVIEW_MODE } from "@/lib/mockData";
 
 const WORKER_TYPES = ["Florist", "Helper", "Rider", "Chef", "Supervisor"];
 
 export async function createRequisition(employee, prevState, formData) {
+  // PREVIEW MODE: there's no real Supabase project wired up yet, so don't
+  // attempt an insert/email — just tell the reviewer why nothing happened.
+  // Set PREVIEW_MODE = false in lib/mockData.js once Supabase is connected.
+  if (PREVIEW_MODE) {
+    return {
+      error:
+        "Preview mode — this form isn't connected to Supabase yet, so submitting is disabled. This is just to review the UI for now.",
+    };
+  }
+
   const worker_type = formData.get("worker_type");
   const tentative_rate = Number(formData.get("tentative_rate"));
   const number_of_workers = Number(formData.get("number_of_workers"));

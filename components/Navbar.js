@@ -1,9 +1,15 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
+import { PREVIEW_MODE } from "@/lib/mockData";
 
 export default function Navbar({ employee }) {
   async function signOut() {
     "use server";
+    // PREVIEW MODE: no real session to sign out of yet. Set PREVIEW_MODE =
+    // false in lib/mockData.js once Supabase auth is wired up.
+    if (PREVIEW_MODE) {
+      redirect("/dashboard");
+    }
     const supabase = createSupabaseServerClient();
     await supabase.auth.signOut();
     redirect("/login");
