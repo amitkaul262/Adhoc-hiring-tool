@@ -31,6 +31,41 @@ create table if not exists employee_master (
 create index if not exists idx_employee_master_role on employee_master(role);
 create index if not exists idx_employee_master_reports_to on employee_master(reports_to_email);
 
+-- Helper functions for role checks used throughout this schema's RLS
+-- policies. SECURITY DEFINER means these run with the function owner's
+-- privileges, bypassing RLS for their own internal query — this is what
+-- avoids "infinite recursion detected in policy" errors that happen if a
+-- policy ON employee_master queries employee_master directly to check the
+-- current user's role (that re-triggers the same policy, forever).
+-- Cross-table policies (e.g. on requisitions, checking employee_master)
+-- don't strictly need this, but using it everywhere keeps every role
+-- check identical and equally safe.
+create or replace function is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from employee_master
+    where email = auth.jwt() ->> 'email' and role = 'admin'
+  );
+$$;
+
+create or replace function is_hr_or_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from employee_master
+    where email = auth.jwt() ->> 'email' and role in ('hr', 'admin')
+  );
+$$;
+
 -- ------------------------------------------------------------
 -- 2. Requisitions
 -- One row = one worker-type request = one unique requisition ID.
@@ -184,13 +219,7 @@ create policy "hod updates routed requisitions" on requisitions
 -- HR/admin: full read access
 drop policy if exists "hr admin reads all requisitions" on requisitions;
 create policy "hr admin reads all requisitions" on requisitions
-  for select using (
-    exists (
-      select 1 from employee_master em
-      where em.email = auth.jwt() ->> 'email'
-        and em.role in ('hr','admin')
-    )
-  );
+  for select using (is_hr_or_admin());
 
 -- requisition_events: readable by anyone who can read the parent requisition
 drop policy if exists "read events for visible requisitions" on requisition_events;
@@ -231,20 +260,8 @@ create policy "store manager marks own attendance" on requisition_attendance
 -- HR/admin: full access to attendance too, per the brief
 drop policy if exists "hr admin full access to attendance" on requisition_attendance;
 create policy "hr admin full access to attendance" on requisition_attendance
-  for all using (
-    exists (
-      select 1 from employee_master em
-      where em.email = auth.jwt() ->> 'email'
-        and em.role in ('hr','admin')
-    )
-  )
-  with check (
-    exists (
-      select 1 from employee_master em
-      where em.email = auth.jwt() ->> 'email'
-        and em.role in ('hr','admin')
-    )
-  );
+  for all using (is_hr_or_admin())
+  with check (is_hr_or_admin());
 
 -- ------------------------------------------------------------
 -- Sample seed data — DELETE before going live. Useful for
@@ -297,12 +314,8 @@ create policy "authenticated employees read vendors" on vendors
 
 drop policy if exists "admin manages vendors" on vendors;
 create policy "admin manages vendors" on vendors
-  for all using (
-    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role = 'admin')
-  )
-  with check (
-    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role = 'admin')
-  );
+  for all using (is_admin())
+  with check (is_admin());
 
 -- ------------------------------------------------------------
 -- 7. Vendor assignment on requisitions — HR maps a vendor once
@@ -320,29 +333,26 @@ create index if not exists idx_requisitions_vendor on requisitions(vendor_id);
 -- rest of this schema already does)
 drop policy if exists "hr admin updates requisitions" on requisitions;
 create policy "hr admin updates requisitions" on requisitions
-  for update using (
-    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role in ('hr','admin'))
-  )
-  with check (
-    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role in ('hr','admin'))
-  );
+  for update using (is_hr_or_admin())
+  with check (is_hr_or_admin());
 
 -- ------------------------------------------------------------
 -- 8. Admin management of employee_master — replaces hand-written
 --    SQL inserts with a real UI for adding people and mapping
 --    store/cost-center/HOD.
+--
+-- IMPORTANT: these two policies check role via is_admin(), NOT a
+-- direct subquery on employee_master — a policy ON employee_master
+-- that subqueries employee_master directly causes Postgres error
+-- 42P17 "infinite recursion detected in policy", since evaluating
+-- the policy re-triggers the same policy. is_admin() is SECURITY
+-- DEFINER, so its internal query bypasses RLS and breaks the cycle.
 -- ------------------------------------------------------------
 drop policy if exists "admin reads all employee records" on employee_master;
 create policy "admin reads all employee records" on employee_master
-  for select using (
-    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role = 'admin')
-  );
+  for select using (is_admin());
 
 drop policy if exists "admin manages employee records" on employee_master;
 create policy "admin manages employee records" on employee_master
-  for all using (
-    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role = 'admin')
-  )
-  with check (
-    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role = 'admin')
-  );
+  for all using (is_admin())
+  with check (is_admin());
