@@ -55,7 +55,9 @@ in Vercel → Project → Settings → Environment Variables.
   HOD/HR builds.
 - `NEXT_PUBLIC_APP_URL` — your deployed URL, used to build the links inside
   emails.
-- `SMTP_*` / `EMAIL_FROM` — Brevo SMTP credentials (same pattern as Rose).
+- `SMTP_*` / `EMAIL_FROM` — Gmail/Workspace SMTP credentials (free — see
+  step-by-step App Password setup notes below). Any standard SMTP provider
+  works here since the code just talks plain SMTP via Nodemailer.
 - `HR_TEAM_EMAILS` — comma-separated list, cc'd on every requisition email
   so HR stays in the loop at every stage.
 
