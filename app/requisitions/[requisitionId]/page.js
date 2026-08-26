@@ -2,6 +2,10 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import RoleChip from "@/components/RoleChip";
 import StatusBadge from "@/components/StatusBadge";
+import VendorAssignForm from "@/components/VendorAssignForm";
+import DecisionForms from "./DecisionForms";
+import { decideRequisition } from "./decisionActions";
+import { assignVendor } from "@/lib/vendorActions";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { PREVIEW_MODE, MOCK_REQUISITIONS, MOCK_EVENTS } from "@/lib/mockData";
@@ -12,10 +16,12 @@ export default async function RequisitionDetailPage({ params }) {
 
   // PREVIEW MODE: sample data instead of a real Supabase query — see
   // lib/mockData.js. Set PREVIEW_MODE = false there to restore these queries.
-  let requisition, events;
+  let requisition, events, vendor, activeVendors;
   if (PREVIEW_MODE) {
     requisition = MOCK_REQUISITIONS.find((r) => r.requisition_id === params.requisitionId);
     events = MOCK_EVENTS[params.requisitionId] || [];
+    vendor = null;
+    activeVendors = [];
   } else {
     const supabase = createSupabaseServerClient();
     ({ data: requisition } = await supabase
@@ -28,9 +34,40 @@ export default async function RequisitionDetailPage({ params }) {
       .select("*")
       .eq("requisition_id", params.requisitionId)
       .order("created_at", { ascending: true }));
+
+    if (requisition?.vendor_id) {
+      ({ data: vendor } = await supabase
+        .from("vendors")
+        .select("name")
+        .eq("id", requisition.vendor_id)
+        .single());
+    }
+
+    if (employee && ["hr", "admin"].includes(employee.role) && requisition?.status === "approved" && !requisition.vendor_id) {
+      ({ data: activeVendors } = await supabase
+        .from("vendors")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name"));
+    }
   }
 
   if (!requisition) notFound();
+
+  const canDecide =
+    employee?.role === "hod" &&
+    employee.email === requisition.hod_email &&
+    requisition.status === "pending_hod_approval";
+
+  const canAssignVendor =
+    employee &&
+    ["hr", "admin"].includes(employee.role) &&
+    requisition.status === "approved" &&
+    !requisition.vendor_id;
+
+  const approveAction = decideRequisition.bind(null, requisition.requisition_id, employee?.email, "approved");
+  const rejectAction = decideRequisition.bind(null, requisition.requisition_id, employee?.email, "rejected");
+  const vendorAction = assignVendor.bind(null, requisition.requisition_id, employee?.email);
 
   return (
     <>
@@ -45,10 +82,22 @@ export default async function RequisitionDetailPage({ params }) {
         </div>
 
         {requisition.status === "approved" && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ marginBottom: 24, display: "flex", gap: 12 }}>
             <Link href={`/requisitions/${requisition.requisition_id}/attendance`} className="btn btn-secondary">
               Mark attendance
             </Link>
+          </div>
+        )}
+
+        {canDecide && <DecisionForms approveAction={approveAction} rejectAction={rejectAction} />}
+
+        {canAssignVendor && (
+          <div className="card" style={{ marginBottom: 24 }}>
+            <h2 style={{ marginBottom: 4 }}>Assign a vendor</h2>
+            <p className="hint" style={{ marginBottom: 14 }}>
+              This requisition is approved but no vendor is supplying the headcount yet.
+            </p>
+            <VendorAssignForm action={vendorAction} vendors={activeVendors} />
           </div>
         )}
 
@@ -62,6 +111,7 @@ export default async function RequisitionDetailPage({ params }) {
             <Field label="Cost center" value={requisition.cost_center || "-"} />
             <Field label="Raised by" value={requisition.raised_by_email} />
             <Field label="Approver (HOD)" value={requisition.hod_email || "-"} />
+            {requisition.vendor_id && <Field label="Vendor" value={vendor?.name || "Assigned"} />}
           </div>
           {requisition.status === "rejected" && requisition.hod_remarks && (
             <p style={{ marginTop: 16 }}>
@@ -122,6 +172,7 @@ function eventLabel(type) {
       hr_notified: "HR notified",
       hod_approved: "Approved by HOD",
       hod_rejected: "Rejected by HOD",
+      vendor_assigned: "Vendor assigned",
       cancelled: "Cancelled",
     }[type] || type
   );

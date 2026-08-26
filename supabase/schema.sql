@@ -255,3 +255,94 @@ create policy "hr admin full access to attendance" on requisition_attendance
 --   ('store.manager@fnp.com', 'Test Store Manager', 'store_manager', 'Retail', 'CC-DEL-01', 'FNP Store - GK1', 'DEL045', 'hod@fnp.com'),
 --   ('hod@fnp.com', 'Test HOD', 'hod', 'Retail', 'CC-DEL-01', null, null, null),
 --   ('hr@fnp.com', 'Test HR', 'hr', 'HR', null, null, null, null);
+
+-- ============================================================
+-- MIGRATION 2 — Vendors, admin management, HOD/HR write access
+-- (added after the initial store-manager build; run this whole
+-- block once in the SQL Editor even if you already ran schema.sql,
+-- since CREATE TABLE IF NOT EXISTS won't add columns to a table
+-- that already exists)
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- 6. Vendors — the manpower suppliers HR assigns against
+--    approved requisitions.
+-- ------------------------------------------------------------
+create table if not exists vendors (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  contact_name text,
+  contact_email text,
+  contact_phone text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists trg_vendors_touch on vendors;
+create trigger trg_vendors_touch
+  before update on vendors
+  for each row execute function touch_updated_at();
+
+alter table vendors enable row level security;
+
+-- Anyone signed in with an employee_master row can read the active
+-- vendor list (needed for the HR assignment dropdown); only admin
+-- manages the list itself.
+drop policy if exists "authenticated employees read vendors" on vendors;
+create policy "authenticated employees read vendors" on vendors
+  for select using (
+    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email')
+  );
+
+drop policy if exists "admin manages vendors" on vendors;
+create policy "admin manages vendors" on vendors
+  for all using (
+    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role = 'admin')
+  )
+  with check (
+    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role = 'admin')
+  );
+
+-- ------------------------------------------------------------
+-- 7. Vendor assignment on requisitions — HR maps a vendor once
+--    a requisition is approved, since that vendor supplies the
+--    actual headcount.
+-- ------------------------------------------------------------
+alter table requisitions add column if not exists vendor_id uuid references vendors(id);
+alter table requisitions add column if not exists vendor_assigned_by text;
+alter table requisitions add column if not exists vendor_assigned_at timestamptz;
+create index if not exists idx_requisitions_vendor on requisitions(vendor_id);
+
+-- HR/admin can update requisitions (in practice, only the vendor_*
+-- columns via the app's HR view — RLS can't restrict to specific
+-- columns, so this trusts the application layer the same way the
+-- rest of this schema already does)
+drop policy if exists "hr admin updates requisitions" on requisitions;
+create policy "hr admin updates requisitions" on requisitions
+  for update using (
+    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role in ('hr','admin'))
+  )
+  with check (
+    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role in ('hr','admin'))
+  );
+
+-- ------------------------------------------------------------
+-- 8. Admin management of employee_master — replaces hand-written
+--    SQL inserts with a real UI for adding people and mapping
+--    store/cost-center/HOD.
+-- ------------------------------------------------------------
+drop policy if exists "admin reads all employee records" on employee_master;
+create policy "admin reads all employee records" on employee_master
+  for select using (
+    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role = 'admin')
+  );
+
+drop policy if exists "admin manages employee records" on employee_master;
+create policy "admin manages employee records" on employee_master
+  for all using (
+    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role = 'admin')
+  )
+  with check (
+    exists (select 1 from employee_master em where em.email = auth.jwt() ->> 'email' and em.role = 'admin')
+  );

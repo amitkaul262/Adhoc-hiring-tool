@@ -334,10 +334,17 @@ p { line-height: 1.5; color: var(--ink-muted); }
   align-items: center;
   justify-content: center;
   padding: 20px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--role-florist) 10%, transparent), transparent 40%),
+    radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--role-rider) 10%, transparent), transparent 40%),
+    radial-gradient(circle at 20% 85%, color-mix(in srgb, var(--role-chef) 8%, transparent), transparent 40%),
+    radial-gradient(circle at 85% 80%, color-mix(in srgb, var(--role-supervisor) 8%, transparent), transparent 40%);
 }
-.login-card { max-width: 380px; width: 100%; text-align: center; }
+.login-card { max-width: 400px; width: 100%; text-align: center; position: relative; z-index: 1; }
 .login-mark {
-  width: 44px; height: 44px;
+  width: 48px; height: 48px;
   border-radius: 12px;
   background: var(--primary);
   color: #fff;
@@ -345,4 +352,111 @@ p { line-height: 1.5; color: var(--ink-muted); }
   font-family: var(--font-display);
   font-weight: 700;
   margin: 0 auto 20px;
+}
+.login-roles {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 20px 0 24px;
+  flex-wrap: wrap;
+}
+
+/* ---------- employee role badges (admin panel) ---------- */
+.emp-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.emp-role-store_manager { background: var(--primary-tint); color: var(--primary-dark); }
+.emp-role-hod { background: #E9E2F5; color: #6B4C9A; }
+.emp-role-hr { background: #FDE9E1; color: #B4432F; }
+.emp-role-admin { background: #16241C; color: #fff; }
+
+/* ---------- generic pill (active/inactive etc) ---------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pill-active { background: var(--success-tint); color: var(--success); }
+.pill-inactive { background: #EDEFEA; color: var(--ink-faint); }
+
+/* ---------- tabs (admin sections) ---------- */
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.tab-nav a {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.tab-nav a[data-active="true"] {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* ---------- textarea ---------- */
+.field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 70px;
+}
+.field textarea:focus { border-color: var(--primary); }
+
+/* ---------- decision actions (HOD approve/reject) ---------- */
+.decision-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-danger:hover { background: #93372A; }
+
+/* ---------- inline row form (HR vendor assign) ---------- */
+.inline-assign {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.inline-assign select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  max-width: 160px;
+}
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+/* ---------- queue section ---------- */
+.queue-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 13px;
 }
