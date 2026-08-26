@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 const ROLES = ["Florist", "Helper", "Rider", "Chef", "Supervisor"];
@@ -36,7 +37,7 @@ function LoginInner() {
   return (
     <div className="login-wrap">
       <div className="card login-card">
-        <div className="login-mark">AH</div>
+        <Image src="/fnp-logo.png" alt="FNP" width={70} height={38} priority style={{ height: 32, width: "auto", marginBottom: 16 }} />
         <h1 style={{ fontSize: 22, marginBottom: 6 }}>Adhoc Hiring</h1>
         <p style={{ marginBottom: 6 }}>
           Raise, approve, and track adhoc manpower requisitions — from the store floor to HR.

@@ -80,10 +80,15 @@ button, input, select, textarea { font-family: inherit; }
 }
 
 .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   letter-spacing: 0.01em;
+  color: var(--bg);
+  text-decoration: none;
 }
 
 .navbar-meta {
@@ -422,16 +427,6 @@ p { line-height: 1.5; color: var(--ink-muted); }
     radial-gradient(circle at 85% 80%, color-mix(in srgb, var(--role-supervisor) 8%, transparent), transparent 40%);
 }
 .login-card { max-width: 400px; width: 100%; text-align: center; position: relative; z-index: 1; }
-.login-mark {
-  width: 48px; height: 48px;
-  border-radius: 12px;
-  background: var(--primary);
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  margin: 0 auto 20px;
-}
 .login-roles {
   display: flex;
   justify-content: center;

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import { PREVIEW_MODE } from "@/lib/mockData";
@@ -54,7 +55,10 @@ export default async function Navbar({ employee }) {
 
   return (
     <div className="navbar">
-      <Link href="/dashboard" className="navbar-brand">FNP Adhoc Hiring</Link>
+      <Link href="/dashboard" className="navbar-brand">
+        <Image src="/fnp-logo.png" alt="FNP" width={70} height={38} priority style={{ height: 28, width: "auto" }} />
+        <span>Adhoc Hiring</span>
+      </Link>
       <div className="navbar-meta">
         {employee && actionCount > 0 && (
           <Link href={bellHref(employee.role)} className="bell-link" aria-label={`${actionCount} items need your attention`}>
