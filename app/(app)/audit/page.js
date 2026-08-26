@@ -1,4 +1,5 @@
 import RoleChip from "@/components/RoleChip";
+import ClickableRow from "@/components/ClickableRow";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
@@ -11,6 +12,8 @@ const EVENT_LABELS = {
   hod_rejected: "Rejected by HOD",
   vendor_assigned: "Vendor assigned",
   reminder_sent: "Reminder sent",
+  attendance_frozen: "Attendance register locked",
+  attendance_unfrozen: "Attendance register unlocked",
   cancelled: "Cancelled",
 };
 
@@ -60,7 +63,7 @@ export default async function AuditLogPage({ searchParams }) {
                   </thead>
                   <tbody>
                     {events.map((e) => (
-                      <tr key={e.id}>
+                      <ClickableRow key={e.id} href={`/requisitions/${e.requisition_id}`}>
                         <td style={{ fontSize: 12, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>
                           {new Date(e.created_at).toLocaleString("en-IN")}
                         </td>
@@ -74,7 +77,7 @@ export default async function AuditLogPage({ searchParams }) {
                         <td>{e.requisitions?.store_name || "-"}</td>
                         <td style={{ fontSize: 12, color: "var(--ink-muted)" }}>{e.actor_email || "-"}</td>
                         <td style={{ fontSize: 12, color: "var(--ink-muted)", maxWidth: 220 }}>{e.remarks || "-"}</td>
-                      </tr>
+                      </ClickableRow>
                     ))}
                   </tbody>
                 </table>

@@ -29,7 +29,7 @@ function rowStatus(present, sanctioned) {
   return { text: "Partial", cls: "pill" };
 }
 
-export default function AttendanceForm({ action, dates, existing, sanctioned, requisitionId }) {
+export default function AttendanceForm({ action, dates, existing, sanctioned, requisitionId, readOnly = false }) {
   const [state, formAction] = useFormState(action, { error: null, success: false });
   const [values, setValues] = useState(() =>
     Object.fromEntries(dates.map((d) => [d, existing[d] !== undefined ? String(existing[d]) : ""]))
@@ -90,6 +90,7 @@ export default function AttendanceForm({ action, dates, existing, sanctioned, re
                       onChange={(e) => setValues((prev) => ({ ...prev, [date]: e.target.value }))}
                       className="register-input"
                       aria-label={`Workers present on ${label}`}
+                      disabled={readOnly}
                     />
                   </td>
                   <td className="register-muted">{absent === null ? "—" : absent}</td>
@@ -113,7 +114,7 @@ export default function AttendanceForm({ action, dates, existing, sanctioned, re
       </div>
 
       <div style={{ padding: "20px 24px", display: "flex", gap: 12 }}>
-        <SubmitButton />
+        {!readOnly && <SubmitButton />}
         <ExportCsvButton
           filename={`${requisitionId || "attendance"}-register.csv`}
           columns={[

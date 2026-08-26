@@ -1,6 +1,7 @@
 import Link from "next/link";
 import RoleChip from "./RoleChip";
 import StatusBadge from "./StatusBadge";
+import ClickableRow from "./ClickableRow";
 
 export default function RequisitionTable({ requisitions }) {
   if (!requisitions || requisitions.length === 0) {
@@ -26,7 +27,7 @@ export default function RequisitionTable({ requisitions }) {
       </thead>
       <tbody>
         {requisitions.map((r) => (
-          <tr key={r.requisition_id}>
+          <ClickableRow key={r.requisition_id} href={`/requisitions/${r.requisition_id}`}>
             <td>
               <Link href={`/requisitions/${r.requisition_id}`} className="req-id">
                 {r.requisition_id}
@@ -37,7 +38,7 @@ export default function RequisitionTable({ requisitions }) {
             <td>₹{r.tentative_rate}</td>
             <td>{formatDate(r.from_date)} → {formatDate(r.to_date)}</td>
             <td><StatusBadge status={r.status} /></td>
-          </tr>
+          </ClickableRow>
         ))}
       </tbody>
     </table>

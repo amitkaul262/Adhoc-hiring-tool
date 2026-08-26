@@ -246,6 +246,7 @@ create policy "store manager marks own attendance" on requisition_attendance
       where r.requisition_id = requisition_attendance.requisition_id
         and r.raised_by_email = auth.jwt() ->> 'email'
         and r.status = 'approved'
+        and r.attendance_frozen = false
     )
   )
   with check (
@@ -254,14 +255,33 @@ create policy "store manager marks own attendance" on requisition_attendance
       where r.requisition_id = requisition_attendance.requisition_id
         and r.raised_by_email = auth.jwt() ->> 'email'
         and r.status = 'approved'
+        and r.attendance_frozen = false
     )
   );
 
--- HR/admin: full access to attendance too, per the brief
+-- HR/admin: full access to attendance too, per the brief — but blocked
+-- once frozen, same as the store manager policy above. The only way past
+-- a freeze is the dedicated unfreeze action (admin-only, at the app
+-- layer), which updates requisitions.attendance_frozen directly and is
+-- covered by the "hr admin updates requisitions" policy — not this one.
 drop policy if exists "hr admin full access to attendance" on requisition_attendance;
 create policy "hr admin full access to attendance" on requisition_attendance
-  for all using (is_hr_or_admin())
-  with check (is_hr_or_admin());
+  for all using (
+    is_hr_or_admin()
+    and exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.attendance_frozen = false
+    )
+  )
+  with check (
+    is_hr_or_admin()
+    and exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.attendance_frozen = false
+    )
+  );
 
 -- ------------------------------------------------------------
 -- Sample seed data — DELETE before going live. Useful for
@@ -361,3 +381,10 @@ create policy "admin manages employee records" on employee_master
 -- MIGRATION 3 — Reminders, bulk actions support
 -- ============================================================
 alter table requisitions add column if not exists last_reminder_at timestamptz;
+
+-- ============================================================
+-- MIGRATION 4 — Attendance freeze + reminder tracking
+-- ============================================================
+alter table requisitions add column if not exists attendance_last_reminder_at timestamptz;
+alter table requisitions add column if not exists attendance_frozen boolean not null default false;
+alter table requisitions add column if not exists attendance_frozen_at timestamptz;

@@ -79,6 +79,21 @@ employee to show a shell for yet.
 - **Auto-reminders**: a daily background job (`/api/cron/reminders`, see
   Setup) emails the HOD (cc HR) for any requisition still pending after
   24h, and won't re-remind the same one again within another 24h.
+- **Attendance freeze**: once a requisition's date range ends, the same
+  daily job reminds the store manager (cc HR) once per business day if
+  attendance isn't fully marked. After a 2-**business**-day grace period
+  (weekends never count toward this — see `lib/businessDays.js`), the
+  register locks automatically. Only an admin can unlock it, from the
+  attendance page itself, which sends its own notification when unlocked.
+- **Weekly HR digest**: every Monday, the same job emails HR a summary of
+  the past 7 days — store-wise requisition counts and approved headcount,
+  vendor-wise assignment counts and headcount, and two timing metrics
+  (average time to decision, average time from approval to vendor
+  assignment).
+- **Every row in every requisition table is clickable** (not just the ID
+  link) — hover highlights the row, click anywhere on it to open that
+  requisition. Inline controls (the vendor-assign dropdown, etc.) still
+  work normally and don't trigger navigation.
 
 ## Setup
 
@@ -133,6 +148,14 @@ Push to GitHub, import the repo in Vercel, add the environment variables
 above, deploy.
 
 ## Notes / decisions worth knowing about
+- **"Deployed" in the weekly digest** means the vendor-assignment
+  timestamp (when HR assigned a supplier), not the first day workers
+  showed present in attendance. If your actual definition of "deployed"
+  is closer to the latter, that's a small query change, not a redesign —
+  say the word.
+- **Email now fires on every state change**, including two that were
+  previously silent gaps: assigning a vendor (notifies the store manager,
+  cc HR) and attendance being locked/unlocked (notifies both).
 - **Requisition granularity**: multi-role select in one submission, but
   each role is still its own requisition with its own ID, grouped by a
   shared `batch_id`. Independently approvable — a HOD could approve the

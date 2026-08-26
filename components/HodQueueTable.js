@@ -1,6 +1,7 @@
 import Link from "next/link";
 import RoleChip from "./RoleChip";
 import StatusBadge from "./StatusBadge";
+import ClickableRow from "./ClickableRow";
 
 export default function HodQueueTable({ requisitions, emptyLabel }) {
   if (!requisitions || requisitions.length === 0) {
@@ -23,7 +24,7 @@ export default function HodQueueTable({ requisitions, emptyLabel }) {
       </thead>
       <tbody>
         {requisitions.map((r) => (
-          <tr key={r.requisition_id}>
+          <ClickableRow key={r.requisition_id} href={`/requisitions/${r.requisition_id}`}>
             <td><Link href={`/requisitions/${r.requisition_id}`} className="req-id">{r.requisition_id}</Link></td>
             <td><RoleChip workerType={r.worker_type} /></td>
             <td>{r.store_name || "-"}</td>
@@ -31,7 +32,7 @@ export default function HodQueueTable({ requisitions, emptyLabel }) {
             <td>{r.number_of_workers}</td>
             <td>{formatDate(r.from_date)} → {formatDate(r.to_date)}</td>
             <td><StatusBadge status={r.status} /></td>
-          </tr>
+          </ClickableRow>
         ))}
       </tbody>
     </table>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import RoleChip from "./RoleChip";
 import StatusBadge from "./StatusBadge";
 import VendorAssignForm from "./VendorAssignForm";
+import ClickableRow from "./ClickableRow";
 
 export default function HrRequisitionsTable({ requisitions, vendorsById, activeVendors, assignActionFor, showVendorColumn = false }) {
   if (!requisitions || requisitions.length === 0) {
@@ -24,7 +25,7 @@ export default function HrRequisitionsTable({ requisitions, vendorsById, activeV
       </thead>
       <tbody>
         {requisitions.map((r) => (
-          <tr key={r.requisition_id}>
+          <ClickableRow key={r.requisition_id} href={`/requisitions/${r.requisition_id}`}>
             <td><Link href={`/requisitions/${r.requisition_id}`} className="req-id">{r.requisition_id}</Link></td>
             <td><RoleChip workerType={r.worker_type} /></td>
             <td>{r.store_name || "-"}</td>
@@ -42,7 +43,7 @@ export default function HrRequisitionsTable({ requisitions, vendorsById, activeV
                 )}
               </td>
             )}
-          </tr>
+          </ClickableRow>
         ))}
       </tbody>
     </table>

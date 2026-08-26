@@ -182,6 +182,8 @@ function eventLabel(type) {
       hod_rejected: "Rejected by HOD",
       vendor_assigned: "Vendor assigned",
       reminder_sent: "Reminder sent",
+      attendance_frozen: "Attendance register locked",
+      attendance_unfrozen: "Attendance register unlocked",
       cancelled: "Cancelled",
     }[type] || type
   );

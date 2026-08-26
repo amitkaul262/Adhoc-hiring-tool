@@ -1,7 +1,8 @@
 import RoleChip from "@/components/RoleChip";
 import BackLink from "@/components/BackLink";
+import UnfreezeButton from "@/components/UnfreezeButton";
 import AttendanceForm from "./AttendanceForm";
-import { markAttendance } from "./actions";
+import { markAttendance, unfreezeAttendance } from "./actions";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { PREVIEW_MODE, MOCK_REQUISITIONS, MOCK_ATTENDANCE } from "@/lib/mockData";
@@ -61,6 +62,8 @@ export default async function AttendancePage({ params }) {
 
   const dates = dateRange(requisition.from_date, requisition.to_date);
   const boundAction = markAttendance.bind(null, requisition.requisition_id, employee.email, dates);
+  const unfreezeAction = unfreezeAttendance.bind(null, requisition.requisition_id, employee.email);
+  const isFrozen = !!requisition.attendance_frozen;
 
   return (
     <div className="container" style={{ maxWidth: 560 }}>
@@ -75,12 +78,31 @@ export default async function AttendancePage({ params }) {
           {requisition.store_name} · {formatRange(requisition.from_date, requisition.to_date)} ·{" "}
           {requisition.number_of_workers} sanctioned
         </p>
+
+        {isFrozen && (
+          <div className="card" style={{ marginBottom: 20, background: "var(--danger-tint)", borderColor: "var(--danger)" }}>
+            <p style={{ margin: 0, fontWeight: 600, color: "var(--danger)" }}>
+              This register is locked
+            </p>
+            <p style={{ margin: "4px 0 0", fontSize: 13 }}>
+              The grace period after {requisition.to_date} passed without attendance being fully marked.
+              {requisition.attendance_frozen_at && ` Locked on ${new Date(requisition.attendance_frozen_at).toLocaleDateString("en-IN")}.`}
+            </p>
+            {employee.role === "admin" && (
+              <div style={{ marginTop: 12 }}>
+                <UnfreezeButton action={unfreezeAction} />
+              </div>
+            )}
+          </div>
+        )}
+
         <AttendanceForm
           action={boundAction}
           dates={dates}
           existing={existing}
           sanctioned={requisition.number_of_workers}
           requisitionId={requisition.requisition_id}
+          readOnly={isFrozen}
         />
     </div>
   );
