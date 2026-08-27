@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
+import { useToastFormState } from "@/hooks/useToastFormState";
 
 function ActionButton({ label, pendingLabel, variant }) {
   const { pending } = useFormStatus();
@@ -12,8 +13,8 @@ function ActionButton({ label, pendingLabel, variant }) {
 }
 
 export default function DecisionForms({ approveAction, rejectAction }) {
-  const [approveState, approveFormAction] = useFormState(approveAction, { error: null });
-  const [rejectState, rejectFormAction] = useFormState(rejectAction, { error: null });
+  const [approveState, approveFormAction] = useToastFormState(approveAction, { error: null }, "Requisition approved.");
+  const [rejectState, rejectFormAction] = useToastFormState(rejectAction, { error: null }, "Requisition rejected.");
 
   return (
     <div className="card" style={{ marginBottom: 24 }}>

@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
+import { useToastFormState } from "@/hooks/useToastFormState";
 import ExportCsvButton from "./ExportCsvButton";
 
 const STATUS_LABELS = { pending: "Pending", partially_paid: "Partially paid", paid: "Paid" };
@@ -30,7 +31,7 @@ const CSV_COLUMNS = [
 ];
 
 export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns }) {
-  const [state, formAction] = useFormState(saveAction, { error: null, success: false });
+  const [state, formAction] = useToastFormState(saveAction, { error: null, success: false }, "Payment info saved.");
   const [edits, setEdits] = useState(() =>
     Object.fromEntries(
       rows.map((r) => [

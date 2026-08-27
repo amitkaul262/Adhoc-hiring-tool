@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
+import { useToastFormState } from "@/hooks/useToastFormState";
 
 const ROLES = [
   { value: "store_manager", label: "Store Manager" },
@@ -19,7 +20,7 @@ function SubmitButton({ label, pendingLabel }) {
 }
 
 export default function PersonForm({ action, initial, isEdit = false }) {
-  const [state, formAction] = useFormState(action, { error: null });
+  const [state, formAction] = useToastFormState(action, { error: null }, isEdit ? "Person updated." : "Person added.");
   const p = initial || {};
 
   return (

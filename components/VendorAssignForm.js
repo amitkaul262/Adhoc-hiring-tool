@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
+import { useToastFormState } from "@/hooks/useToastFormState";
 
 function AssignButton({ compact }) {
   const { pending } = useFormStatus();
@@ -12,7 +13,7 @@ function AssignButton({ compact }) {
 }
 
 export default function VendorAssignForm({ action, vendors, compact = false }) {
-  const [state, formAction] = useFormState(action, { error: null });
+  const [state, formAction] = useToastFormState(action, { error: null }, "Vendor assigned.");
 
   if (!vendors || vendors.length === 0) {
     return (

@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
+import { useToastFormState } from "@/hooks/useToastFormState";
 
 function Button() {
   const { pending } = useFormStatus();
@@ -12,7 +13,7 @@ function Button() {
 }
 
 export default function UnfreezeButton({ action }) {
-  const [state, formAction] = useFormState(action, { error: null });
+  const [state, formAction] = useToastFormState(action, { error: null }, "Register unlocked.");
   return (
     <form action={formAction} style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
       {state?.error && <span style={{ color: "var(--danger)", fontSize: 12 }}>{state.error}</span>}

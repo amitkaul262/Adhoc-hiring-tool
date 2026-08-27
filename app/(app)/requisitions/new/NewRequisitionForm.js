@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
+import { useToastFormState } from "@/hooks/useToastFormState";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -27,7 +28,7 @@ function todayLocal() {
 }
 
 export default function NewRequisitionForm({ action, employee }) {
-  const [state, formAction] = useFormState(action, { error: null });
+  const [state, formAction] = useToastFormState(action, { error: null }, "Requisition raised.");
   const searchParams = useSearchParams();
   const prefillType = searchParams.get("type");
   const prefillCount = searchParams.get("count");

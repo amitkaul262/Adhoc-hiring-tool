@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
+import { useToastFormState } from "@/hooks/useToastFormState";
 import Link from "next/link";
 import RoleChip from "./RoleChip";
 
@@ -25,7 +26,9 @@ function BulkApproveButton({ disabled }) {
 export default function HodPendingQueue({ requisitions, bulkApproveAction }) {
   const [selected, setSelected] = useState(new Set());
   const [remarks, setRemarks] = useState("");
-  const [state, formAction] = useFormState(bulkApproveAction, { error: null });
+  const [state, formAction] = useToastFormState(bulkApproveAction, { error: null }, (s) =>
+    `Approved ${s.approvedCount} requisition${s.approvedCount === 1 ? "" : "s"}.`
+  );
 
   const allSelected = requisitions.length > 0 && selected.size === requisitions.length;
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
+import { useToastFormState } from "@/hooks/useToastFormState";
 import ExportCsvButton from "@/components/ExportCsvButton";
 
 const STATUS_META = {
@@ -31,7 +32,7 @@ function dayMeta(dateStr) {
 }
 
 export default function AttendanceForm({ action, dates, workers, existing, requisitionId, readOnly = false }) {
-  const [state, formAction] = useFormState(action, { error: null, success: false });
+  const [state, formAction] = useToastFormState(action, { error: null, success: false }, "Register saved.");
 
   const [values, setValues] = useState(() => {
     const init = {};

@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
+import { useToastFormState } from "@/hooks/useToastFormState";
 
 function SubmitButton({ label, pendingLabel }) {
   const { pending } = useFormStatus();
@@ -12,7 +13,7 @@ function SubmitButton({ label, pendingLabel }) {
 }
 
 export default function VendorForm({ action, initial, isEdit = false }) {
-  const [state, formAction] = useFormState(action, { error: null });
+  const [state, formAction] = useToastFormState(action, { error: null }, isEdit ? "Vendor updated." : "Vendor added.");
   const v = initial || {};
 
   return (

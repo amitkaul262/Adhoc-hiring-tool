@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
+import { useToastFormState } from "@/hooks/useToastFormState";
 
 function SaveButton({ label, pendingLabel }) {
   const { pending } = useFormStatus();
@@ -12,8 +13,8 @@ function SaveButton({ label, pendingLabel }) {
 }
 
 export default function InvoiceForm({ saveAction, uploadAction, initial }) {
-  const [saveState, saveFormAction] = useFormState(saveAction, { error: null });
-  const [uploadState, uploadFormAction] = useFormState(uploadAction, { error: null });
+  const [saveState, saveFormAction] = useToastFormState(saveAction, { error: null }, "Invoice info saved.");
+  const [uploadState, uploadFormAction] = useToastFormState(uploadAction, { error: null }, "File uploaded to Drive.");
 
   return (
     <div>

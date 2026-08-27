@@ -48,5 +48,5 @@ export async function decideRequisition(requisitionId, hodEmail, decision, prevS
   }
 
   revalidatePath(`/requisitions/${requisitionId}`);
-  return { error: null, decided: decision };
+  return { error: null, success: true, decided: decision };
 }
