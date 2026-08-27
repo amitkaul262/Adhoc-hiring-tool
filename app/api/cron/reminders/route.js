@@ -110,7 +110,8 @@ async function runAttendanceReminders(supabase) {
   const { data: attendanceRows } = await supabase
     .from("requisition_attendance")
     .select("requisition_id")
-    .in("requisition_id", ids);
+    .in("requisition_id", ids)
+    .not("status", "is", null);
 
   const markedCountByReq = {};
   for (const row of attendanceRows || []) {
@@ -121,9 +122,11 @@ async function runAttendanceReminders(supabase) {
   let frozen = 0;
 
   for (const req of ended) {
-    const expectedDays = totalDaysInclusive(req.from_date, req.to_date);
-    const markedDays = markedCountByReq[req.requisition_id] || 0;
-    if (markedDays >= expectedDays) continue; // fully marked, nothing to do
+    // Expected = every worker marked for every day in the range — the
+    // worker-wise model means this is workers × days, not just days.
+    const expectedCells = totalDaysInclusive(req.from_date, req.to_date) * req.number_of_workers;
+    const markedCells = markedCountByReq[req.requisition_id] || 0;
+    if (markedCells >= expectedCells) continue; // fully marked, nothing to do
 
     const graceDeadline = addBusinessDays(req.to_date, 2);
 

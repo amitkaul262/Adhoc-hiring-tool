@@ -4,8 +4,8 @@ import UnfreezeButton from "@/components/UnfreezeButton";
 import AttendanceForm from "./AttendanceForm";
 import { markAttendance, unfreezeAttendance } from "./actions";
 import { getCurrentEmployee } from "@/lib/currentUser";
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
-import { PREVIEW_MODE, MOCK_REQUISITIONS, MOCK_ATTENDANCE } from "@/lib/mockData";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabaseServer";
+import { PREVIEW_MODE, MOCK_REQUISITIONS, MOCK_WORKERS, MOCK_WORKER_ATTENDANCE } from "@/lib/mockData";
 import { notFound, redirect } from "next/navigation";
 
 // Pure date-string arithmetic — never touches local-timezone Date getters,
@@ -27,10 +27,11 @@ function dateRange(from, to) {
 export default async function AttendancePage({ params }) {
   const { employee } = await getCurrentEmployee();
 
-  let requisition, existing;
+  let requisition, workers, existing;
   if (PREVIEW_MODE) {
     requisition = MOCK_REQUISITIONS.find((r) => r.requisition_id === params.requisitionId);
-    existing = MOCK_ATTENDANCE[params.requisitionId] || {};
+    workers = MOCK_WORKERS[params.requisitionId] || [];
+    existing = MOCK_WORKER_ATTENDANCE[params.requisitionId] || {};
   } else {
     const supabase = createSupabaseServerClient();
     const { data } = await supabase
@@ -40,11 +41,42 @@ export default async function AttendancePage({ params }) {
       .single();
     requisition = data;
 
-    const { data: attendanceRows } = await supabase
-      .from("requisition_attendance")
-      .select("attendance_date, workers_present")
-      .eq("requisition_id", params.requisitionId);
-    existing = Object.fromEntries((attendanceRows || []).map((r) => [r.attendance_date, r.workers_present]));
+    if (requisition) {
+      const { data: existingWorkers } = await supabase
+        .from("requisition_workers")
+        .select("*")
+        .eq("requisition_id", params.requisitionId)
+        .order("slot_number");
+
+      if (!existingWorkers || existingWorkers.length === 0) {
+        // First visit to this requisition's register — auto-create one
+        // slot per sanctioned worker. Uses the admin client since this is
+        // a system-level bootstrap step, not a user-initiated write, and
+        // needs to succeed regardless of which role (store manager or
+        // HR) happens to open the page first.
+        const admin = createSupabaseAdminClient();
+        const slots = Array.from({ length: requisition.number_of_workers }, (_, i) => ({
+          requisition_id: params.requisitionId,
+          slot_number: i + 1,
+        }));
+        const { data: created } = await admin.from("requisition_workers").insert(slots).select();
+        workers = created || [];
+      } else {
+        workers = existingWorkers;
+      }
+
+      const { data: attendanceRows } = await supabase
+        .from("requisition_attendance")
+        .select("requisition_worker_id, attendance_date, status")
+        .eq("requisition_id", params.requisitionId)
+        .not("status", "is", null);
+
+      existing = {};
+      for (const row of attendanceRows || []) {
+        existing[row.requisition_worker_id] ||= {};
+        existing[row.requisition_worker_id][row.attendance_date] = row.status;
+      }
+    }
   }
 
   if (!requisition) notFound();
@@ -61,12 +93,12 @@ export default async function AttendancePage({ params }) {
   }
 
   const dates = dateRange(requisition.from_date, requisition.to_date);
-  const boundAction = markAttendance.bind(null, requisition.requisition_id, employee.email, dates);
+  const boundAction = markAttendance.bind(null, requisition.requisition_id, employee.email);
   const unfreezeAction = unfreezeAttendance.bind(null, requisition.requisition_id, employee.email);
   const isFrozen = !!requisition.attendance_frozen;
 
   return (
-    <div className="container" style={{ maxWidth: 560 }}>
+    <div className="container" style={{ maxWidth: 900 }}>
         <BackLink href={`/requisitions/${requisition.requisition_id}`} label="Back to requisition" />
         <span className="eyebrow">{requisition.requisition_id}</span>
         <div className="section-header">
@@ -99,8 +131,8 @@ export default async function AttendancePage({ params }) {
         <AttendanceForm
           action={boundAction}
           dates={dates}
+          workers={workers}
           existing={existing}
-          sanctioned={requisition.number_of_workers}
           requisitionId={requisition.requisition_id}
           readOnly={isFrozen}
         />

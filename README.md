@@ -36,10 +36,14 @@ employee to show a shell for yet.
   Orders, or Other with free text) — submitted as a batch but saved as
   independent requisitions, all sharing the same reason.
 - Their own requisition history with live status.
-- **Mark daily attendance on approved requisitions** — a proper register:
-  date, day of week, weekend rows shaded, present/absent per day, a live
-  status pill (Full / Partial / None / Not marked), and a summary footer
-  (days marked, total person-days present, attendance rate).
+- **Mark worker-wise attendance on approved requisitions** — a proper
+  muster-roll style register: one row per worker, one column per date,
+  click a cell to cycle through Full Day / Half Day / Absent / Leave
+  (color-coded for at-a-glance reading), a per-worker total, and an
+  overall summary footer (cells marked, status breakdown, attendance
+  rate). Worker slots ("Worker 1".."Worker N") are created automatically
+  from the sanctioned headcount the first time the register is opened,
+  and each can be renamed to a real name.
 
 **HOD** (`/dashboard`)
 - Queue of requisitions routed to them, split into "awaiting your

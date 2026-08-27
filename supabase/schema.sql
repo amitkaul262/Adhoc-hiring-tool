@@ -403,3 +403,83 @@ alter table requisitions add constraint requisitions_reason_check
     'Multiple Orders',
     'Other'
   ));
+
+-- ============================================================
+-- MIGRATION 6 — Worker-wise attendance (Full Day / Half Day /
+-- Absent / Leave per worker per day, replacing the old single
+-- daily headcount number). Adhoc daily-wage workers aren't
+-- registered anywhere else in the system, so worker slots are
+-- auto-generated ("Worker 1".."Worker N") the first time the
+-- attendance page is opened for an approved requisition — the
+-- store manager can rename any slot to a real name if they want.
+-- ============================================================
+
+create table if not exists requisition_workers (
+  id uuid primary key default gen_random_uuid(),
+  requisition_id text not null references requisitions(requisition_id) on delete cascade,
+  slot_number integer not null,
+  worker_name text,
+  created_at timestamptz not null default now(),
+  unique (requisition_id, slot_number)
+);
+
+create index if not exists idx_requisition_workers_req on requisition_workers(requisition_id);
+
+alter table requisition_attendance add column if not exists requisition_worker_id uuid references requisition_workers(id) on delete cascade;
+alter table requisition_attendance add column if not exists status text check (status in ('full_day','half_day','absent','leave'));
+
+-- The old model had one row per requisition per day (an aggregate
+-- headcount). The new model has one row per WORKER per day, so the old
+-- uniqueness rule (one row per requisition+date) has to go — multiple
+-- workers now legitimately share the same requisition_id + date.
+alter table requisition_attendance drop constraint if exists requisition_attendance_requisition_id_attendance_date_key;
+drop index if exists requisition_attendance_requisition_id_attendance_date_key;
+
+alter table requisition_attendance drop constraint if exists requisition_attendance_worker_date_unique;
+alter table requisition_attendance add constraint requisition_attendance_worker_date_unique
+  unique (requisition_worker_id, attendance_date);
+
+-- requisition_workers RLS: same visibility/edit rules as attendance
+-- itself — the store manager who raised it (once approved, not frozen),
+-- or HR/admin.
+alter table requisition_workers enable row level security;
+
+drop policy if exists "store manager manages own workers" on requisition_workers;
+create policy "store manager manages own workers" on requisition_workers
+  for all using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+    )
+  )
+  with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+    )
+  );
+
+drop policy if exists "hr admin manages workers" on requisition_workers;
+create policy "hr admin manages workers" on requisition_workers
+  for all using (
+    is_hr_or_admin()
+    and exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.attendance_frozen = false
+    )
+  )
+  with check (
+    is_hr_or_admin()
+    and exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.attendance_frozen = false
+    )
+  );

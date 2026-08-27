@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { sendAttendanceUnfrozenEmail } from "@/lib/email";
 import { PREVIEW_MODE } from "@/lib/mockData";
 
-export async function markAttendance(requisitionId, employeeEmail, dates, prevState, formData) {
+export async function markAttendance(requisitionId, employeeEmail, prevState, formData) {
   if (PREVIEW_MODE) {
     return {
       error:
@@ -28,20 +28,40 @@ export async function markAttendance(requisitionId, employeeEmail, dates, prevSt
     return { error: "This register is locked. Only an admin can unlock it before it can be edited." };
   }
 
-  const rows = dates.map((date) => ({
-    requisition_id: requisitionId,
-    attendance_date: date,
-    workers_present: Number(formData.get(`present_${date}`) || 0),
-    marked_by_email: employeeEmail,
-  }));
+  let entries, names;
+  try {
+    entries = JSON.parse(formData.get("attendance_json") || "[]");
+    names = JSON.parse(formData.get("worker_names_json") || "[]");
+  } catch {
+    return { error: "Something went wrong reading the register. Try again." };
+  }
 
-  const { error } = await supabase
-    .from("requisition_attendance")
-    .upsert(rows, { onConflict: "requisition_id,attendance_date" });
+  // Worker names first — harmless to update even if unchanged.
+  for (const n of names) {
+    if (!n.id) continue;
+    await supabase
+      .from("requisition_workers")
+      .update({ worker_name: (n.worker_name || "").trim() || null })
+      .eq("id", n.id);
+  }
 
-  if (error) {
-    console.error("markAttendance upsert failed:", error);
-    return { error: "Couldn't save attendance. Please try again." };
+  if (entries.length > 0) {
+    const rows = entries.map((e) => ({
+      requisition_id: requisitionId,
+      requisition_worker_id: e.requisition_worker_id,
+      attendance_date: e.attendance_date,
+      status: e.status,
+      marked_by_email: employeeEmail,
+    }));
+
+    const { error } = await supabase
+      .from("requisition_attendance")
+      .upsert(rows, { onConflict: "requisition_worker_id,attendance_date" });
+
+    if (error) {
+      console.error("markAttendance upsert failed:", error);
+      return { error: "Couldn't save attendance. Please try again." };
+    }
   }
 
   revalidatePath(`/requisitions/${requisitionId}/attendance`);
