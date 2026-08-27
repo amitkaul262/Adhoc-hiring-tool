@@ -3,6 +3,7 @@ import RoleChip from "@/components/RoleChip";
 import BackLink from "@/components/BackLink";
 import PaymentsTable from "@/components/PaymentsTable";
 import InvoiceForm from "@/components/InvoiceForm";
+import AttachmentLink from "@/components/AttachmentLink";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { fetchWorkerPaymentRows } from "@/lib/paymentsData";
 import { saveWorkerPayments, saveInvoiceInfo, uploadInvoiceFile } from "@/lib/paymentActions";
@@ -102,9 +103,7 @@ export default async function PaymentDetailPage({ params }) {
         <h2 style={{ marginBottom: 4 }}>Vendor invoice</h2>
         {requisition?.invoice_file_url && (
           <p style={{ marginTop: 0, marginBottom: 14 }}>
-            <a href={requisition.invoice_file_url} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
-              View attachment →
-            </a>
+            <AttachmentLink url={requisition.invoice_file_url} />
           </p>
         )}
         <InvoiceForm saveAction={boundInvoiceAction} uploadAction={boundUploadAction} initial={requisition} />

@@ -75,9 +75,17 @@ function handleUploadFile(body) {
   var blob = Utilities.newBlob(bytes, body.mimeType, body.fileName);
   var file = folder.createFile(blob);
 
-  // Restricted to the FNP Workspace domain, not the open internet — an
-  // appropriate default for financial documents like vendor invoices.
-  file.setSharing(DriveApp.Access.DOMAIN_WITH_LINK, DriveApp.Permission.VIEW);
+  // Try to restrict sharing to the FNP Workspace domain — appropriate for
+  // financial documents. But this is a SEPARATE permission from creating
+  // the file itself, and can be blocked independently by domain sharing
+  // policy even when file creation succeeds. Never let a sharing failure
+  // undo an upload that already worked — the file still exists and is at
+  // least accessible to whoever can already see the destination folder.
+  try {
+    file.setSharing(DriveApp.Access.DOMAIN_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (sharingErr) {
+    // Swallow it — the file is still uploaded and usable.
+  }
 
   return jsonResponse({ success: true, fileId: file.getId(), url: file.getUrl() });
 }

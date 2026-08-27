@@ -2,6 +2,7 @@ import Link from "next/link";
 import RoleChip from "@/components/RoleChip";
 import StatusBadge from "@/components/StatusBadge";
 import VendorAssignForm from "@/components/VendorAssignForm";
+import AttachmentLink from "@/components/AttachmentLink";
 import DecisionForms from "./DecisionForms";
 import { decideRequisition } from "./decisionActions";
 import { assignVendor } from "@/lib/vendorActions";
@@ -183,9 +184,7 @@ export default async function RequisitionDetailPage({ params }) {
                 )}
                 {requisition.invoice_file_url && (
                   <p style={{ margin: "6px 0 0" }}>
-                    <a href={requisition.invoice_file_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--primary)" }}>
-                      View attachment →
-                    </a>
+                    <AttachmentLink url={requisition.invoice_file_url} />
                   </p>
                 )}
               </div>

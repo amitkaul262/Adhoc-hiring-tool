@@ -34,11 +34,19 @@ export default async function PaymentsPage({ searchParams }) {
     requisition_id: r.requisition_id,
     worker_type: r.worker_type,
     store: r.store_name,
+    function: r.function || "",
+    cost_center: r.cost_center || "",
+    reason: r.reason || "",
+    raised_by: r.raised_by_email || "",
+    hod: r.hod_email || "",
     vendor: r.vendor_name || "Not assigned",
+    from_date: r.from_date,
+    to_date: r.to_date,
     workers: r.worker_count,
     days: r.total_days,
     amount: r.total_amount,
     status: STATUS_LABELS[r.rollup_status],
+    invoice_number: r.invoice_number || "",
   }));
 
   return (
@@ -74,11 +82,19 @@ export default async function PaymentsPage({ searchParams }) {
             { key: "requisition_id", label: "Requisition ID" },
             { key: "worker_type", label: "Worker Type" },
             { key: "store", label: "Store" },
+            { key: "function", label: "Function" },
+            { key: "cost_center", label: "Cost Center" },
+            { key: "reason", label: "Reason" },
+            { key: "raised_by", label: "Raised By" },
+            { key: "hod", label: "HOD" },
             { key: "vendor", label: "Vendor" },
+            { key: "from_date", label: "From" },
+            { key: "to_date", label: "To" },
             { key: "workers", label: "Workers" },
             { key: "days", label: "Total Days" },
             { key: "amount", label: "Total Amount" },
             { key: "status", label: "Status" },
+            { key: "invoice_number", label: "Invoice Number" },
           ]}
           rows={csvRows}
         />
