@@ -50,6 +50,12 @@ const ICONS = {
       <path d="M3 17h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   ),
+  trends: (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M3 15l4.5-5 3 3 6-6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12.5 6h4v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
   payments: (
     <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
       <rect x="2.5" y="5" width="15" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
@@ -87,6 +93,7 @@ export default function Sidebar({ role }) {
             <NavItem href="/attendance" icon="attendance" label="Attendance" active={is("/attendance")} />
             <NavItem href="/payments" icon="payments" label="Payments" active={is("/payments")} />
             <NavItem href="/reports" icon="reports" label="Reports" active={is("/reports")} />
+            <NavItem href="/trends" icon="trends" label="Trends" active={is("/trends")} />
           </>
         )}
       </div>
