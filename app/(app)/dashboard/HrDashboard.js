@@ -109,7 +109,7 @@ export default async function HrDashboard({ employee, searchParams }) {
   const rejectedCount = all.filter((r) => r.status === "rejected").length;
 
   return (
-    <div className="container">
+    <div className="container-wide">
       <span className="eyebrow">HR</span>
       <div className="section-header">
         <h1>{employee.full_name}</h1>

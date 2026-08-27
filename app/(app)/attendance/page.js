@@ -56,7 +56,7 @@ export default async function AttendanceOverviewPage() {
   const notStartedCount = rows.filter((r) => r.marked_cells === 0).length;
 
   return (
-    <div className="container" style={{ maxWidth: 1000 }}>
+    <div className="container-wide">
       <span className="eyebrow">HR</span>
       <div className="section-header">
         <h1>Attendance</h1>

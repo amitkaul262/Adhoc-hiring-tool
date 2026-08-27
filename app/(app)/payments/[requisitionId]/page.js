@@ -84,7 +84,7 @@ export default async function PaymentDetailPage({ params }) {
   ];
 
   return (
-    <div className="container" style={{ maxWidth: 1000 }}>
+    <div className="container-wide">
       <BackLink href="/payments" label="Back to payments" />
       <span className="eyebrow">{first.requisition_id}</span>
       <div className="section-header">

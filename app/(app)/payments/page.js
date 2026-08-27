@@ -50,7 +50,7 @@ export default async function PaymentsPage({ searchParams }) {
   }));
 
   return (
-    <div className="container" style={{ maxWidth: 1000 }}>
+    <div className="container-wide">
       <span className="eyebrow">HR</span>
       <div className="section-header">
         <h1>Payments</h1>

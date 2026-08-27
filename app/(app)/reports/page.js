@@ -103,7 +103,7 @@ export default async function ReportsPage({ searchParams }) {
   ];
 
   return (
-    <div className="container" style={{ maxWidth: 1100 }}>
+    <div className="container-wide">
       <span className="eyebrow">HR</span>
       <div className="section-header">
         <h1>Reports</h1>

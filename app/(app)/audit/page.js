@@ -37,7 +37,7 @@ export default async function AuditLogPage({ searchParams }) {
   const { data: events } = await query;
 
   return (
-    <div className="container">
+    <div className="container-wide">
         <span className="eyebrow">HR</span>
         <div className="section-header">
           <h1>Audit log</h1>
