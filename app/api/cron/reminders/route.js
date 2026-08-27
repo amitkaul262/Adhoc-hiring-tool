@@ -6,7 +6,7 @@ import {
   sendAttendanceFrozenEmail,
   sendWeeklyHrSummaryEmail,
 } from "@/lib/email";
-import { addBusinessDays, isWeekend, todayUTC } from "@/lib/businessDays";
+import { addBusinessDays, isWeekend, todayUTC, totalDaysInclusive } from "@/lib/businessDays";
 
 // Triggered by Vercel Cron (see vercel.json — runs once daily, which is
 // both the Hobby-plan frequency limit and genuinely all this needs). No
@@ -75,14 +75,6 @@ async function runApprovalReminders(supabase) {
 // 2-business-day grace period. Nothing happens on weekends — no
 // reminder fires, and the grace countdown doesn't advance either.
 // ------------------------------------------------------------
-function totalDaysInclusive(from, to) {
-  const [fy, fm, fd] = from.split("-").map(Number);
-  const [ty, tm, td] = to.split("-").map(Number);
-  const start = Date.UTC(fy, fm - 1, fd);
-  const end = Date.UTC(ty, tm - 1, td);
-  return Math.round((end - start) / 86400000) + 1;
-}
-
 async function runAttendanceReminders(supabase) {
   const today = todayUTC();
 

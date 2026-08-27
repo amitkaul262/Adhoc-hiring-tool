@@ -67,14 +67,19 @@ employee to show a shell for yet.
   across every requisition (raised, notified, approved, rejected, vendor
   assigned, reminder sent, attendance locked/unlocked), filterable by
   event type and actor.
-- **Payments** — set a final per-day rate for each worker (distinct from
-  the store manager's original tentative rate); the amount payable is
-  calculated automatically from that rate × effective attendance days
-  (Half Day = 0.5). Payment status (Pending / Partially Paid / Paid) and
-  free-text remarks are both editable at any time, independent of whether
-  the attendance register itself is locked. Filterable by vendor, payment
-  status, and store, with a summary strip and CSV export — this is the
-  vendor-wise report.
+- **Payments** — one row per **requisition** (not per worker — a
+  10-worker requisition is still one line item), showing total workers,
+  total effective days, and total amount payable across everyone on it.
+  Click through to set each individual worker's final per-day rate,
+  payment status (Pending / Partially Paid / Paid), and remarks — amount
+  is calculated automatically from rate × effective attendance days
+  (Half Day = 0.5), independent of whether the attendance register is
+  locked. Filterable by vendor, payment status, and store, with a
+  summary strip and CSV export — this is the vendor-wise report.
+- **Attendance overview** — same requisition-wise-list pattern as
+  Payments: every approved requisition in one line (store, duration,
+  headcount, cells marked vs. expected, status), click through to that
+  requisition's actual attendance register to mark or review it.
 - (Admin users see this same view, plus a link into the admin panel.)
 
 **Admin** (`/admin`)
