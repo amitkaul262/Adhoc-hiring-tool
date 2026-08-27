@@ -28,6 +28,7 @@ export default async function AttendancePage({ params }) {
   const { employee } = await getCurrentEmployee();
 
   let requisition, workers, existing;
+  let workerSetupError = null;
   if (PREVIEW_MODE) {
     requisition = MOCK_REQUISITIONS.find((r) => r.requisition_id === params.requisitionId);
     workers = MOCK_WORKERS[params.requisitionId] || [];
@@ -59,7 +60,14 @@ export default async function AttendancePage({ params }) {
           requisition_id: params.requisitionId,
           slot_number: i + 1,
         }));
-        const { data: created } = await admin.from("requisition_workers").insert(slots).select();
+        const { data: created, error } = await admin.from("requisition_workers").insert(slots).select();
+        if (error) {
+          console.error("attendance page: worker slot auto-create failed", {
+            requisitionId: params.requisitionId,
+            error,
+          });
+          workerSetupError = error.message;
+        }
         workers = created || [];
       } else {
         workers = existingWorkers;
@@ -125,6 +133,19 @@ export default async function AttendancePage({ params }) {
                 <UnfreezeButton action={unfreezeAction} />
               </div>
             )}
+          </div>
+        )}
+
+        {workerSetupError && (
+          <div className="card" style={{ marginBottom: 20, background: "var(--danger-tint)", borderColor: "var(--danger)" }}>
+            <p style={{ margin: 0, fontWeight: 600, color: "var(--danger)" }}>
+              Couldn&apos;t set up worker slots
+            </p>
+            <p style={{ margin: "4px 0 0", fontSize: 13 }}>
+              {workerSetupError.includes("does not exist") || workerSetupError.includes("relation")
+                ? "The requisition_workers table doesn't exist in the database yet — Migration 6 needs to be run in Supabase before this page can work."
+                : workerSetupError}
+            </p>
           </div>
         )}
 
