@@ -249,12 +249,28 @@ async function runWeeklySummary(supabase) {
     (deployedThisWeek || []).map((r) => new Date(r.vendor_assigned_at) - new Date(r.hod_action_at))
   );
 
+  // Attendance-to-payment turnaround: for workers marked "paid" this week,
+  // how long since their requisition's attendance register was fully
+  // completed. Needs a join since attendance_completed_at lives on
+  // requisitions, not requisition_workers.
+  const { data: paidThisWeek } = await supabase
+    .from("requisition_workers")
+    .select("paid_at, requisitions(attendance_completed_at)")
+    .not("paid_at", "is", null)
+    .gte("paid_at", since);
+
+  const avgTimeToPayment = averageDuration(
+    (paidThisWeek || [])
+      .filter((w) => w.requisitions?.attendance_completed_at)
+      .map((w) => new Date(w.paid_at) - new Date(w.requisitions.attendance_completed_at))
+  );
+
   try {
     const sent = await sendWeeklyHrSummaryEmail({
       periodLabel: `${sinceLabel} to ${today}`,
       storeStats: Object.values(byStore),
       vendorStats: Object.values(byVendor),
-      timing: { avgTimeToDecision, avgTimeToVendor },
+      timing: { avgTimeToDecision, avgTimeToVendor, avgTimeToPayment },
     });
     return { sent, storesCounted: Object.keys(byStore).length };
   } catch (e) {

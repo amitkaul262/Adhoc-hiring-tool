@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabaseServer";
 import { sendAttendanceUnfrozenEmail } from "@/lib/email";
+import { totalDaysInclusive } from "@/lib/businessDays";
 import { PREVIEW_MODE } from "@/lib/mockData";
 
 export async function markAttendance(requisitionId, employeeEmail, prevState, formData) {
@@ -20,7 +21,7 @@ export async function markAttendance(requisitionId, employeeEmail, prevState, fo
   // would just look like a generic save error to the person marking it.
   const { data: requisition } = await supabase
     .from("requisitions")
-    .select("attendance_frozen")
+    .select("attendance_frozen, from_date, to_date, number_of_workers, attendance_completed_at")
     .eq("requisition_id", requisitionId)
     .single();
 
@@ -61,6 +62,27 @@ export async function markAttendance(requisitionId, employeeEmail, prevState, fo
     if (error) {
       console.error("markAttendance upsert failed:", error);
       return { error: "Couldn't save attendance. Please try again." };
+    }
+  }
+
+  // Record when the register first became fully marked — feeds the
+  // attendance-to-payment turnaround metric in the weekly digest. This is
+  // a system-derived fact, not a user-authored edit, so it uses the admin
+  // client rather than needing its own RLS grant for whichever role
+  // happens to complete the register (store manager or HR).
+  if (requisition && !requisition.attendance_completed_at) {
+    const { count } = await supabase
+      .from("requisition_attendance")
+      .select("id", { count: "exact", head: true })
+      .eq("requisition_id", requisitionId)
+      .not("status", "is", null);
+    const expected = requisition.number_of_workers * totalDaysInclusive(requisition.from_date, requisition.to_date);
+    if ((count || 0) >= expected) {
+      const admin = createSupabaseAdminClient();
+      await admin
+        .from("requisitions")
+        .update({ attendance_completed_at: new Date().toISOString() })
+        .eq("requisition_id", requisitionId);
     }
   }
 

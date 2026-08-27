@@ -176,6 +176,28 @@ above, deploy.
 - **Email now fires on every state change**, including two that were
   previously silent gaps: assigning a vendor (notifies the store manager,
   cc HR) and attendance being locked/unlocked (notifies both).
+- **Requisition detail is a true single-page view** — Attendance and
+  Payment summary cards sit right on the requisition's own page (cells
+  marked, completion status, total amount, payment status, invoice
+  number), each linking to its full page for deeper editing. No more
+  needing to hop across three pages to understand one requisition's state.
+- **Vendor invoice reference** — a number and a file link (e.g. a Google
+  Drive share link HR pastes in after uploading it themselves) saved
+  against each requisition, clickable to open. This doesn't upload files
+  through the app — it stores a link to a file already in Drive. True
+  in-app upload-to-Drive would need Drive API access configured in Google
+  Cloud Console plus token storage/refresh, which isn't built.
+- **Attendance-to-payment turnaround** — the weekly HR digest now also
+  reports the average time from a register being fully marked to a
+  worker being marked Paid.
+- **CSV exports are comprehensive** — the payment detail export includes
+  every field (function, cost center, reason, HOD, raised-by, vendor,
+  full/half/absent/leave day breakdown, rate, amount, payment status,
+  paid-at timestamp, remarks, invoice number), and the audit log page now
+  has its own CSV export too.
+- **HR's main requisition table shows Attendance and Payment status
+  columns directly** — no need to open a requisition to see where it
+  stands on either.
 - **Requisition granularity**: multi-role select in one submission, but
   each role is still its own requisition with its own ID, grouped by a
   shared `batch_id`. Independently approvable — a HOD could approve the

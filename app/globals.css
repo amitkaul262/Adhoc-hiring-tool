@@ -871,3 +871,13 @@ th.register-date-col[data-weekend="true"] {
   opacity: 0.55;
   cursor: progress;
 }
+
+/* ---------- requisition detail summary cards ---------- */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 640px) {
+  .summary-grid { grid-template-columns: 1fr; }
+}

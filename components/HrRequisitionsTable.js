@@ -4,7 +4,7 @@ import StatusBadge from "./StatusBadge";
 import VendorAssignForm from "./VendorAssignForm";
 import ClickableRow from "./ClickableRow";
 
-export default function HrRequisitionsTable({ requisitions, vendorsById, activeVendors, assignActionFor, showVendorColumn = false }) {
+export default function HrRequisitionsTable({ requisitions, vendorsById, activeVendors, assignActionFor, statusByReqId, showVendorColumn = false }) {
   if (!requisitions || requisitions.length === 0) {
     return <div className="queue-empty">Nothing here.</div>;
   }
@@ -21,30 +21,41 @@ export default function HrRequisitionsTable({ requisitions, vendorsById, activeV
           <th>Raised by</th>
           <th>Status</th>
           {showVendorColumn && <th>Vendor</th>}
+          {statusByReqId && <th>Attendance</th>}
+          {statusByReqId && <th>Payment</th>}
         </tr>
       </thead>
       <tbody>
-        {requisitions.map((r) => (
-          <ClickableRow key={r.requisition_id} href={`/requisitions/${r.requisition_id}`}>
-            <td><Link href={`/requisitions/${r.requisition_id}`} className="req-id">{r.requisition_id}</Link></td>
-            <td><RoleChip workerType={r.worker_type} /></td>
-            <td>{r.store_name || "-"}</td>
-            <td style={{ fontSize: 12, color: "var(--ink-muted)" }}>{r.function || "-"}</td>
-            <td style={{ fontSize: 12, color: "var(--ink-muted)" }}>{r.raised_by_email}</td>
-            <td><StatusBadge status={r.status} /></td>
-            {showVendorColumn && (
-              <td>
-                {r.vendor_id ? (
-                  vendorsById?.[r.vendor_id]?.name || "Assigned"
-                ) : r.status === "approved" ? (
-                  <VendorAssignForm action={assignActionFor(r.requisition_id)} vendors={activeVendors} compact />
-                ) : (
-                  <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>—</span>
-                )}
-              </td>
-            )}
-          </ClickableRow>
-        ))}
+        {requisitions.map((r) => {
+          const s = statusByReqId?.[r.requisition_id];
+          return (
+            <ClickableRow key={r.requisition_id} href={`/requisitions/${r.requisition_id}`}>
+              <td><Link href={`/requisitions/${r.requisition_id}`} className="req-id">{r.requisition_id}</Link></td>
+              <td><RoleChip workerType={r.worker_type} /></td>
+              <td>{r.store_name || "-"}</td>
+              <td style={{ fontSize: 12, color: "var(--ink-muted)" }}>{r.function || "-"}</td>
+              <td style={{ fontSize: 12, color: "var(--ink-muted)" }}>{r.raised_by_email}</td>
+              <td><StatusBadge status={r.status} /></td>
+              {showVendorColumn && (
+                <td>
+                  {r.vendor_id ? (
+                    vendorsById?.[r.vendor_id]?.name || "Assigned"
+                  ) : r.status === "approved" ? (
+                    <VendorAssignForm action={assignActionFor(r.requisition_id)} vendors={activeVendors} compact />
+                  ) : (
+                    <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>—</span>
+                  )}
+                </td>
+              )}
+              {statusByReqId && (
+                <td>{s ? <span className={`pill ${s.attendance.cls}`}>{s.attendance.label}</span> : <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>—</span>}</td>
+              )}
+              {statusByReqId && (
+                <td>{s ? <span className={`pill ${s.payment.cls}`}>{s.payment.label}</span> : <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>—</span>}</td>
+              )}
+            </ClickableRow>
+          );
+        })}
       </tbody>
     </table>
     </div>

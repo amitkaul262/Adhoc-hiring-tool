@@ -509,3 +509,12 @@ drop policy if exists "hr admin updates payment info" on requisition_workers;
 create policy "hr admin updates payment info" on requisition_workers
   for update using (is_hr_or_admin())
   with check (is_hr_or_admin());
+
+-- ============================================================
+-- MIGRATION 8 — Invoice reference, attendance-to-payment
+-- turnaround tracking, and the data needed for fuller exports.
+-- ============================================================
+alter table requisitions add column if not exists invoice_number text;
+alter table requisitions add column if not exists invoice_file_url text;
+alter table requisitions add column if not exists attendance_completed_at timestamptz;
+alter table requisition_workers add column if not exists paid_at timestamptz;

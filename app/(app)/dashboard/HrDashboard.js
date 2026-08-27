@@ -6,6 +6,8 @@ import KpiStrip from "@/components/KpiStrip";
 import ExportCsvButton from "@/components/ExportCsvButton";
 import { assignVendor } from "@/lib/vendorActions";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { fetchWorkerPaymentRows, summarizeByRequisition } from "@/lib/paymentsData";
+import { totalDaysInclusive } from "@/lib/businessDays";
 import { PREVIEW_MODE, MOCK_REQUISITIONS } from "@/lib/mockData";
 
 const CSV_COLUMNS = [
@@ -37,7 +39,7 @@ function applyFilters(rows, params) {
 }
 
 export default async function HrDashboard({ employee, searchParams }) {
-  let all = [], activeVendors = [], vendorsById = {};
+  let all = [], activeVendors = [], vendorsById = {}, statusByReqId = {};
 
   if (PREVIEW_MODE) {
     // Preview mode was built around the store manager flow — showing the
@@ -53,6 +55,46 @@ export default async function HrDashboard({ employee, searchParams }) {
     all = reqs || [];
     activeVendors = (vendors || []).filter((v) => v.is_active);
     vendorsById = Object.fromEntries((vendors || []).map((v) => [v.id, v]));
+
+    // Attendance + payment status per approved requisition, for the two
+    // extra columns in the main table below — this is what makes the
+    // dashboard itself a full view, not just a launchpad to other pages.
+    const approvedIds = all.filter((r) => r.status === "approved").map((r) => r.requisition_id);
+    if (approvedIds.length > 0) {
+      const [{ data: workerCounts }, { data: markedCounts }, { rows: paymentRows }] = await Promise.all([
+        supabase.from("requisition_workers").select("requisition_id").in("requisition_id", approvedIds),
+        supabase.from("requisition_attendance").select("requisition_id").in("requisition_id", approvedIds).not("status", "is", null),
+        fetchWorkerPaymentRows(),
+      ]);
+
+      const workersByReq = {};
+      for (const w of workerCounts || []) workersByReq[w.requisition_id] = (workersByReq[w.requisition_id] || 0) + 1;
+      const markedByReq = {};
+      for (const m of markedCounts || []) markedByReq[m.requisition_id] = (markedByReq[m.requisition_id] || 0) + 1;
+      const paymentByReq = Object.fromEntries(summarizeByRequisition(paymentRows).map((p) => [p.requisition_id, p]));
+
+      for (const r of all) {
+        if (r.status !== "approved") continue;
+        const workerCount = workersByReq[r.requisition_id] || 0;
+        const expectedCells = workerCount * totalDaysInclusive(r.from_date, r.to_date);
+        const markedCells = markedByReq[r.requisition_id] || 0;
+        statusByReqId[r.requisition_id] = {
+          attendance: r.attendance_frozen
+            ? { label: "Locked", cls: "pill-inactive-warn" }
+            : expectedCells > 0 && markedCells >= expectedCells
+              ? { label: "Complete", cls: "pill-active" }
+              : markedCells === 0
+                ? { label: "Not started", cls: "pill-inactive" }
+                : { label: "In progress", cls: "pill" },
+          payment: paymentByReq[r.requisition_id]
+            ? {
+                label: paymentByReq[r.requisition_id].rollup_status === "paid" ? "Paid" : paymentByReq[r.requisition_id].rollup_status === "pending" ? "Pending" : "Partial",
+                cls: paymentByReq[r.requisition_id].rollup_status === "paid" ? "pill-active" : paymentByReq[r.requisition_id].rollup_status === "pending" ? "pill-inactive" : "pill",
+              }
+            : { label: "—", cls: "pill-inactive" },
+        };
+      }
+    }
   }
 
   const filtered = applyFilters(all, searchParams);
@@ -103,6 +145,7 @@ export default async function HrDashboard({ employee, searchParams }) {
             vendorsById={vendorsById}
             activeVendors={activeVendors}
             assignActionFor={(id) => assignVendor.bind(null, id, employee.email)}
+            statusByReqId={statusByReqId}
             showVendorColumn
           />
         </div>
@@ -124,6 +167,7 @@ export default async function HrDashboard({ employee, searchParams }) {
           <HrRequisitionsTable
             requisitions={rest}
             vendorsById={vendorsById}
+            statusByReqId={statusByReqId}
             showVendorColumn
           />
         </div>

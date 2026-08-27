@@ -29,7 +29,7 @@ const CSV_COLUMNS = [
   { key: "remarks", label: "Remarks" },
 ];
 
-export default function PaymentsTable({ rows, saveAction, csvRows }) {
+export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns }) {
   const [state, formAction] = useFormState(saveAction, { error: null, success: false });
   const [edits, setEdits] = useState(() =>
     Object.fromEntries(
@@ -135,7 +135,7 @@ export default function PaymentsTable({ rows, saveAction, csvRows }) {
 
       <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
         <SubmitButton />
-        <ExportCsvButton filename="payments.csv" columns={CSV_COLUMNS} rows={csvRows} />
+        <ExportCsvButton filename="payments.csv" columns={csvColumns || CSV_COLUMNS} rows={csvRows} />
       </div>
     </form>
   );

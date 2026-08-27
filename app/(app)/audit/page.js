@@ -1,5 +1,6 @@
 import RoleChip from "@/components/RoleChip";
 import ClickableRow from "@/components/ClickableRow";
+import ExportCsvButton from "@/components/ExportCsvButton";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
@@ -28,7 +29,7 @@ export default async function AuditLogPage({ searchParams }) {
     .from("requisition_events")
     .select("*, requisitions(worker_type, store_name, raised_by_email, hod_email)")
     .order("created_at", { ascending: false })
-    .limit(200);
+    .limit(1000);
 
   if (searchParams?.event_type) query = query.eq("event_type", searchParams.event_type);
   if (searchParams?.actor) query = query.ilike("actor_email", `%${searchParams.actor}%`);
@@ -42,8 +43,34 @@ export default async function AuditLogPage({ searchParams }) {
           <h1>Audit log</h1>
         </div>
         <p style={{ marginBottom: 20 }}>
-          Every action across every requisition, most recent first. Showing the last 200 events.
+          Every action across every requisition, most recent first. Showing the last 1,000 events.
         </p>
+
+        {events && events.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <ExportCsvButton
+              filename="audit-log.csv"
+              columns={[
+                { key: "when", label: "When" },
+                { key: "event", label: "Event" },
+                { key: "requisition_id", label: "Requisition ID" },
+                { key: "worker_type", label: "Worker Type" },
+                { key: "store", label: "Store" },
+                { key: "actor", label: "Actor" },
+                { key: "remarks", label: "Remarks" },
+              ]}
+              rows={events.map((e) => ({
+                when: new Date(e.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+                event: EVENT_LABELS[e.event_type] || e.event_type,
+                requisition_id: e.requisition_id,
+                worker_type: e.requisitions?.worker_type || "",
+                store: e.requisitions?.store_name || "",
+                actor: e.actor_email || "",
+                remarks: e.remarks || "",
+              }))}
+            />
+          </div>
+        )}
 
         <div className="card" style={{ padding: 0 }}>
           <div style={{ padding: events?.length ? "8px 16px" : 0 }}>

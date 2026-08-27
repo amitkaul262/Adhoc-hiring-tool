@@ -7,6 +7,8 @@ import { decideRequisition } from "./decisionActions";
 import { assignVendor } from "@/lib/vendorActions";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { fetchWorkerPaymentRows, summarizeByRequisition } from "@/lib/paymentsData";
+import { totalDaysInclusive } from "@/lib/businessDays";
 import { PREVIEW_MODE, MOCK_REQUISITIONS, MOCK_EVENTS } from "@/lib/mockData";
 import { notFound } from "next/navigation";
 
@@ -15,7 +17,7 @@ export default async function RequisitionDetailPage({ params }) {
 
   // PREVIEW MODE: sample data instead of a real Supabase query — see
   // lib/mockData.js. Set PREVIEW_MODE = false there to restore these queries.
-  let requisition, events, vendor, activeVendors;
+  let requisition, events, vendor, activeVendors, attendanceSummary, paymentSummary;
   if (PREVIEW_MODE) {
     requisition = MOCK_REQUISITIONS.find((r) => r.requisition_id === params.requisitionId);
     events = MOCK_EVENTS[params.requisitionId] || [];
@@ -48,6 +50,36 @@ export default async function RequisitionDetailPage({ params }) {
         .select("id, name")
         .eq("is_active", true)
         .order("name"));
+    }
+
+    // Attendance + payment summaries — this is what makes this page a
+    // genuine single-view "homepage" for the requisition, rather than
+    // just a set of links out to other pages.
+    const canSeeSummaries =
+      employee &&
+      requisition?.status === "approved" &&
+      (requisition.raised_by_email === employee.email || ["hr", "admin"].includes(employee.role));
+
+    if (canSeeSummaries) {
+      const [{ count: workerCount }, { count: markedCells }] = await Promise.all([
+        supabase.from("requisition_workers").select("id", { count: "exact", head: true }).eq("requisition_id", params.requisitionId),
+        supabase.from("requisition_attendance").select("id", { count: "exact", head: true }).eq("requisition_id", params.requisitionId).not("status", "is", null),
+      ]);
+      const expectedCells = (workerCount || 0) * totalDaysInclusive(requisition.from_date, requisition.to_date);
+      attendanceSummary = {
+        workerCount: workerCount || 0,
+        markedCells: markedCells || 0,
+        expectedCells,
+        complete: expectedCells > 0 && (markedCells || 0) >= expectedCells,
+      };
+    }
+
+    // Payment summary is HR/admin only — rates negotiated with vendors
+    // aren't shown to the store manager or HOD here.
+    if (employee && ["hr", "admin"].includes(employee.role) && requisition?.status === "approved") {
+      const { rows: paymentRows } = await fetchWorkerPaymentRows(params.requisitionId);
+      const rollup = summarizeByRequisition(paymentRows)[0];
+      paymentSummary = rollup || null;
     }
   }
 
@@ -107,6 +139,50 @@ export default async function RequisitionDetailPage({ params }) {
               This requisition is approved but no vendor is supplying the headcount yet.
             </p>
             <VendorAssignForm action={vendorAction} vendors={activeVendors} />
+          </div>
+        )}
+
+        {(attendanceSummary || paymentSummary) && (
+          <div className={attendanceSummary && paymentSummary ? "summary-grid" : ""} style={{ marginBottom: 24 }}>
+            {attendanceSummary && (
+              <div className="card">
+                <div className="section-header" style={{ marginBottom: 10 }}>
+                  <h2 style={{ fontSize: 16 }}>Attendance</h2>
+                  <Link href={`/requisitions/${requisition.requisition_id}/attendance`} style={{ fontSize: 13, color: "var(--primary)" }}>
+                    Open register →
+                  </Link>
+                </div>
+                <p style={{ margin: 0, fontSize: 14 }}>
+                  <strong>{attendanceSummary.markedCells}</strong> of {attendanceSummary.expectedCells} cells marked
+                  {" "}({attendanceSummary.workerCount} worker{attendanceSummary.workerCount === 1 ? "" : "s"})
+                </p>
+                <span className={`pill ${requisition.attendance_frozen ? "pill-inactive-warn" : attendanceSummary.complete ? "pill-active" : "pill-inactive"}`} style={{ marginTop: 8, display: "inline-block" }}>
+                  {requisition.attendance_frozen ? "Locked" : attendanceSummary.complete ? "Complete" : attendanceSummary.markedCells === 0 ? "Not started" : "In progress"}
+                </span>
+              </div>
+            )}
+            {paymentSummary && (
+              <div className="card">
+                <div className="section-header" style={{ marginBottom: 10 }}>
+                  <h2 style={{ fontSize: 16 }}>Payment</h2>
+                  <Link href={`/payments/${requisition.requisition_id}`} style={{ fontSize: 13, color: "var(--primary)" }}>
+                    Open payments →
+                  </Link>
+                </div>
+                <p style={{ margin: 0, fontSize: 14 }}>
+                  <strong>₹{paymentSummary.total_amount.toLocaleString("en-IN")}</strong> total
+                  {paymentSummary.rate_missing_count > 0 && (
+                    <span style={{ color: "var(--warn)", fontSize: 12 }}> ({paymentSummary.rate_missing_count} unrated)</span>
+                  )}
+                </p>
+                <span className={`pill ${paymentSummary.rollup_status === "paid" ? "pill-active" : paymentSummary.rollup_status === "pending" ? "pill-inactive" : "pill"}`} style={{ marginTop: 8, display: "inline-block" }}>
+                  {paymentSummary.rollup_status === "paid" ? "Paid" : paymentSummary.rollup_status === "pending" ? "Pending" : "Partial"}
+                </span>
+                {requisition.invoice_number && (
+                  <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--ink-muted)" }}>Invoice: {requisition.invoice_number}</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
