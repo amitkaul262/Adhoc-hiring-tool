@@ -36,6 +36,13 @@ const ICONS = {
       <path d="M6.5 6h1M9 6h1M6.5 9h1M9 9h1M6.5 12h1M9 12h1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   ),
+  payments: (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <rect x="2.5" y="5" width="15" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M2.5 8.5h15" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5.5 11.5h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
 };
 
 function NavItem({ href, icon, label, active }) {
@@ -61,7 +68,10 @@ export default function Sidebar({ role }) {
         )}
 
         {(role === "hr" || role === "admin") && (
-          <NavItem href="/audit" icon="audit" label="Audit Log" active={is("/audit")} />
+          <>
+            <NavItem href="/audit" icon="audit" label="Audit Log" active={is("/audit")} />
+            <NavItem href="/payments" icon="payments" label="Payments" active={is("/payments")} />
+          </>
         )}
       </div>
 

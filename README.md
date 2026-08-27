@@ -65,7 +65,16 @@ employee to show a shell for yet.
 - **Export CSV** of the current filtered list.
 - Link to the **audit log** — a single searchable timeline of every event
   across every requisition (raised, notified, approved, rejected, vendor
-  assigned, reminder sent), filterable by event type and actor.
+  assigned, reminder sent, attendance locked/unlocked), filterable by
+  event type and actor.
+- **Payments** — set a final per-day rate for each worker (distinct from
+  the store manager's original tentative rate); the amount payable is
+  calculated automatically from that rate × effective attendance days
+  (Half Day = 0.5). Payment status (Pending / Partially Paid / Paid) and
+  free-text remarks are both editable at any time, independent of whether
+  the attendance register itself is locked. Filterable by vendor, payment
+  status, and store, with a summary strip and CSV export — this is the
+  vendor-wise report.
 - (Admin users see this same view, plus a link into the admin panel.)
 
 **Admin** (`/admin`)

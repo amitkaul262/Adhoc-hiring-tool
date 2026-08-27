@@ -483,3 +483,29 @@ create policy "hr admin manages workers" on requisition_workers
         and r.attendance_frozen = false
     )
   );
+
+-- ============================================================
+-- MIGRATION 7 — Payments: HR sets a final per-day rate per
+-- worker, tracks payment status and remarks, independent of
+-- whether the attendance register itself is locked (payment
+-- reconciliation is a separate concern from attendance-marking
+-- integrity, and often happens after a register is frozen).
+-- ============================================================
+alter table requisition_workers add column if not exists rate_per_day numeric(10,2);
+alter table requisition_workers add column if not exists payment_status text not null default 'pending'
+  check (payment_status in ('pending', 'partially_paid', 'paid'));
+alter table requisition_workers add column if not exists payment_remarks text;
+alter table requisition_workers add column if not exists payment_updated_by text;
+alter table requisition_workers add column if not exists payment_updated_at timestamptz;
+
+-- A dedicated, unfrozen-independent update policy for HR/admin. The
+-- existing "hr admin manages workers" policy (from Migration 6) already
+-- covers general worker edits but is gated on attendance_frozen = false
+-- to match attendance-marking rules — payment reconciliation shouldn't
+-- be blocked by that, since it commonly happens after a register locks.
+-- The app layer (not this policy) is what actually restricts which
+-- columns a given action touches — see updatePaymentInfo.
+drop policy if exists "hr admin updates payment info" on requisition_workers;
+create policy "hr admin updates payment info" on requisition_workers
+  for update using (is_hr_or_admin())
+  with check (is_hr_or_admin());
