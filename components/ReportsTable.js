@@ -1,5 +1,6 @@
 import RoleChip from "./RoleChip";
 import ClickableRow from "./ClickableRow";
+import AttachmentLink from "./AttachmentLink";
 
 const DECISION_CLS = {
   Pending: "pill-inactive",
@@ -38,6 +39,7 @@ export default function ReportsTable({ rows }) {
                 <th>Attendance</th>
                 <th>Amount</th>
                 <th>Payment</th>
+                <th>Invoice</th>
               </tr>
             </thead>
             <tbody>
@@ -63,6 +65,11 @@ export default function ReportsTable({ rows }) {
                     <td style={{ fontSize: 12 }}>{attendanceLabel}</td>
                     <td style={{ fontWeight: 600 }}>{r.total_amount > 0 ? `₹${r.total_amount.toLocaleString("en-IN")}` : "—"}</td>
                     <td>{payment ? <span className={`pill ${payment.cls}`}>{payment.label}</span> : <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>—</span>}</td>
+                    <td>
+                      {r.invoice_number && <div style={{ fontSize: 12, marginBottom: r.invoice_file_url ? 4 : 0 }}>{r.invoice_number}</div>}
+                      {r.invoice_file_url && <AttachmentLink url={r.invoice_file_url} label="View" />}
+                      {!r.invoice_number && !r.invoice_file_url && <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>—</span>}
+                    </td>
                   </ClickableRow>
                 );
               })}
