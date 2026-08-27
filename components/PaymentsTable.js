@@ -44,6 +44,35 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns })
       ])
     )
   );
+  const [selected, setSelected] = useState(() => new Set());
+  const [bulkRate, setBulkRate] = useState("");
+  const [bulkStatus, setBulkStatus] = useState("paid");
+
+  function toggleOne(id) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+  function toggleAll() {
+    setSelected((prev) => (prev.size === rows.length ? new Set() : new Set(rows.map((r) => r.id))));
+  }
+  function applyBulkRate() {
+    if (bulkRate === "" || isNaN(Number(bulkRate))) return;
+    setEdits((prev) => {
+      const next = { ...prev };
+      for (const id of selected) next[id] = { ...next[id], rate_per_day: bulkRate };
+      return next;
+    });
+  }
+  function applyBulkStatus() {
+    setEdits((prev) => {
+      const next = { ...prev };
+      for (const id of selected) next[id] = { ...next[id], payment_status: bulkStatus };
+      return next;
+    });
+  }
 
   function updateEdit(id, field, value) {
     setEdits((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
@@ -71,10 +100,38 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns })
       {state?.error && <p className="form-error">{state.error}</p>}
       {state?.success && <p style={{ color: "var(--success)", fontWeight: 600, marginBottom: 16 }}>Saved.</p>}
 
+      {selected.size > 0 && (
+        <div className="bulk-toolbar">
+          <span className="bulk-count">{selected.size} selected</span>
+          <div className="bulk-action">
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Rate/day"
+              value={bulkRate}
+              onChange={(e) => setBulkRate(e.target.value)}
+              style={{ width: 90, padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 6 }}
+            />
+            <button type="button" className="btn btn-secondary btn-sm" onClick={applyBulkRate}>Apply rate</button>
+          </div>
+          <div className="bulk-action">
+            <select value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)} style={{ padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13 }}>
+              {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={applyBulkStatus}>Apply status</button>
+          </div>
+          <button type="button" className="bulk-clear" onClick={() => setSelected(new Set())}>Clear</button>
+        </div>
+      )}
+
       <div className="table-scroll">
         <table className="req-table">
           <thead>
             <tr>
+              <th style={{ width: 32 }}>
+                <input type="checkbox" checked={selected.size === rows.length} onChange={toggleAll} aria-label="Select all workers" />
+              </th>
               <th>Worker</th>
               <th>Requisition</th>
               <th>Store</th>
@@ -89,6 +146,9 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns })
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
+                <td>
+                  <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleOne(r.id)} aria-label={`Select ${r.worker_name}`} />
+                </td>
                 <td style={{ fontWeight: 600 }}>{r.worker_name}</td>
                 <td><Link href={`/requisitions/${r.requisition_id}`} className="req-id">{r.requisition_id}</Link></td>
                 <td>{r.store_name || "-"}</td>

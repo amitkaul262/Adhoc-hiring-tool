@@ -1,5 +1,6 @@
 import TopBar from "@/components/TopBar";
 import Sidebar from "@/components/Sidebar";
+import CommandPalette from "@/components/CommandPalette";
 import { getCurrentEmployee } from "@/lib/currentUser";
 
 export default async function AppLayout({ children }) {
@@ -33,6 +34,7 @@ export default async function AppLayout({ children }) {
         <Sidebar role={employee.role} />
         <main className="app-main">{children}</main>
       </div>
+      <CommandPalette />
     </>
   );
 }

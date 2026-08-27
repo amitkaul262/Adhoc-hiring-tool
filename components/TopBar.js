@@ -1,32 +1,75 @@
 import Link from "next/link";
+import NotificationBell from "@/components/NotificationBell";
+import SearchTrigger from "@/components/SearchTrigger";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import { PREVIEW_MODE } from "@/lib/mockData";
 
-async function getActionCount(employee) {
-  if (PREVIEW_MODE || !employee) return 0;
+async function getActionItems(employee) {
+  if (PREVIEW_MODE || !employee) return [];
 
   const supabase = createSupabaseServerClient();
 
   if (employee.role === "hod") {
-    const { count } = await supabase
+    const { data } = await supabase
       .from("requisitions")
-      .select("id", { count: "exact", head: true })
+      .select("requisition_id, worker_type, store_name")
       .eq("hod_email", employee.email)
-      .eq("status", "pending_hod_approval");
-    return count || 0;
+      .eq("status", "pending_hod_approval")
+      .order("created_at", { ascending: true })
+      .limit(6);
+    return [
+      {
+        label: "Pending your approval",
+        items: (data || []).map((r) => ({
+          id: r.requisition_id,
+          text: `${r.requisition_id} — ${r.worker_type}, ${r.store_name || "—"}`,
+          href: `/requisitions/${r.requisition_id}`,
+        })),
+        moreHref: "/dashboard",
+      },
+    ];
   }
 
   if (employee.role === "hr" || employee.role === "admin") {
-    const { count } = await supabase
-      .from("requisitions")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "approved")
-      .is("vendor_id", null);
-    return count || 0;
+    const [{ data: needsVendor }, { count: pendingPayCount }] = await Promise.all([
+      supabase
+        .from("requisitions")
+        .select("requisition_id, worker_type, store_name")
+        .eq("status", "approved")
+        .is("vendor_id", null)
+        .order("created_at", { ascending: true })
+        .limit(6),
+      supabase
+        .from("requisition_workers")
+        .select("id", { count: "exact", head: true })
+        .eq("payment_status", "pending"),
+    ]);
+
+    const groups = [];
+    if ((needsVendor || []).length > 0) {
+      groups.push({
+        label: "Needs a vendor",
+        items: needsVendor.map((r) => ({
+          id: r.requisition_id,
+          text: `${r.requisition_id} — ${r.worker_type}, ${r.store_name || "—"}`,
+          href: `/requisitions/${r.requisition_id}`,
+        })),
+        moreHref: "/dashboard",
+      });
+    }
+    if (pendingPayCount > 0) {
+      groups.push({
+        label: "Payment pending",
+        items: [],
+        count: pendingPayCount,
+        moreHref: "/payments?payment_status=pending",
+      });
+    }
+    return groups;
   }
 
-  return 0;
+  return [];
 }
 
 function initials(name) {
@@ -50,9 +93,10 @@ export default async function TopBar({ employee }) {
     redirect("/login");
   }
 
-  const actionCount = employee && ["hod", "hr", "admin"].includes(employee.role)
-    ? await getActionCount(employee)
-    : 0;
+  const actionGroups = employee && ["hod", "hr", "admin"].includes(employee.role)
+    ? await getActionItems(employee)
+    : [];
+  const actionCount = actionGroups.reduce((sum, g) => sum + (g.count ?? g.items.length), 0);
 
   return (
     <div className="topbar">
@@ -63,15 +107,8 @@ export default async function TopBar({ employee }) {
       </Link>
 
       <div className="topbar-actions">
-        {employee && actionCount > 0 && (
-          <Link href="/dashboard" className="bell-link" aria-label={`${actionCount} items need your attention`}>
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M10 2a5 5 0 0 0-5 5v3.2c0 .5-.2 1-.5 1.4L3 13.5c-.6.7-.1 1.8.8 1.8h12.4c.9 0 1.4-1.1.8-1.8l-1.5-1.9c-.3-.4-.5-.9-.5-1.4V7a5 5 0 0 0-5-5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-              <path d="M8 17a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <span className="bell-badge">{actionCount > 9 ? "9+" : actionCount}</span>
-          </Link>
-        )}
+        {employee && <SearchTrigger />}
+        {employee && actionCount > 0 && <NotificationBell groups={actionGroups} count={actionCount} />}
 
         {employee && (
           <div className="topbar-user">

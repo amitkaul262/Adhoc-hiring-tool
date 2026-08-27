@@ -35,7 +35,10 @@ export default function VendorAssignForm({ action, vendors, compact = false }) {
           {compact ? "Select vendor" : "Select a vendor"}
         </option>
         {vendors.map((v) => (
-          <option key={v.id} value={v.id}>{v.name}</option>
+          <option key={v.id} value={v.id}>
+            {v.name}
+            {v.stats && v.stats.reliabilityPct !== null ? ` — ${v.stats.reliabilityPct}% reliable, ${v.stats.workerCount} placed` : ""}
+          </option>
         ))}
       </select>
       <AssignButton compact={compact} />

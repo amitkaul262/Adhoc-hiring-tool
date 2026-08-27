@@ -9,6 +9,7 @@ import { assignVendor } from "@/lib/vendorActions";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { fetchWorkerPaymentRows, summarizeByRequisition } from "@/lib/paymentsData";
+import { fetchAllVendorStats } from "@/lib/vendorStats";
 import { totalDaysInclusive } from "@/lib/businessDays";
 import { PREVIEW_MODE, MOCK_REQUISITIONS, MOCK_EVENTS } from "@/lib/mockData";
 import { notFound } from "next/navigation";
@@ -51,6 +52,8 @@ export default async function RequisitionDetailPage({ params }) {
         .select("id, name")
         .eq("is_active", true)
         .order("name"));
+      const vendorStats = await fetchAllVendorStats();
+      activeVendors = (activeVendors || []).map((v) => ({ ...v, stats: vendorStats[v.id] || null }));
     }
 
     // Attendance + payment summaries — this is what makes this page a

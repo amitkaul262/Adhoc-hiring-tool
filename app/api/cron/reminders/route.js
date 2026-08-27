@@ -6,7 +6,7 @@ import {
   sendAttendanceFrozenEmail,
   sendWeeklyHrSummaryEmail,
 } from "@/lib/email";
-import { addBusinessDays, isWeekend, todayUTC, totalDaysInclusive } from "@/lib/businessDays";
+import { addBusinessDays, isWeekend, todayUTC, totalDaysInclusive, averageDuration } from "@/lib/businessDays";
 
 // Triggered by Vercel Cron (see vercel.json — runs once daily, which is
 // both the Hobby-plan frequency limit and genuinely all this needs). No
@@ -277,11 +277,4 @@ async function runWeeklySummary(supabase) {
     console.error("weekly summary: send failed", e);
     return { error: "Send failed" };
   }
-}
-
-function averageDuration(msValues) {
-  if (msValues.length === 0) return "—";
-  const avgMs = msValues.reduce((a, b) => a + b, 0) / msValues.length;
-  const hours = avgMs / 3_600_000;
-  return hours < 24 ? `${hours.toFixed(1)}h` : `${(hours / 24).toFixed(1)}d`;
 }

@@ -7,6 +7,7 @@ import ExportCsvButton from "@/components/ExportCsvButton";
 import { assignVendor } from "@/lib/vendorActions";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { fetchWorkerPaymentRows, summarizeByRequisition } from "@/lib/paymentsData";
+import { fetchAllVendorStats } from "@/lib/vendorStats";
 import { totalDaysInclusive } from "@/lib/businessDays";
 import { PREVIEW_MODE, MOCK_REQUISITIONS } from "@/lib/mockData";
 
@@ -55,6 +56,11 @@ export default async function HrDashboard({ employee, searchParams }) {
     all = reqs || [];
     activeVendors = (vendors || []).filter((v) => v.is_active);
     vendorsById = Object.fromEntries((vendors || []).map((v) => [v.id, v]));
+
+    if (activeVendors.length > 0) {
+      const vendorStats = await fetchAllVendorStats();
+      activeVendors = activeVendors.map((v) => ({ ...v, stats: vendorStats[v.id] || null }));
+    }
 
     // Attendance + payment status per approved requisition, for the two
     // extra columns in the main table below — this is what makes the
