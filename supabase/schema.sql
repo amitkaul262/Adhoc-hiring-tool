@@ -518,3 +518,15 @@ alter table requisitions add column if not exists invoice_number text;
 alter table requisitions add column if not exists invoice_file_url text;
 alter table requisitions add column if not exists attendance_completed_at timestamptz;
 alter table requisition_workers add column if not exists paid_at timestamptz;
+
+-- ============================================================
+-- MIGRATION 9 — Fix: drop the old workers_present column.
+-- Migration 6 redesigned this table to be worker-wise (one row
+-- per worker per day, via requisition_worker_id + status) but
+-- never removed the original aggregate column, which still had
+-- a NOT NULL constraint — every new-style insert was failing
+-- with "null value in column workers_present violates not-null
+-- constraint" since nothing sets it anymore. This is a genuine
+-- gap in that migration, not a config issue on your end.
+-- ============================================================
+alter table requisition_attendance drop column if exists workers_present;
