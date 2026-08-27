@@ -5,7 +5,7 @@ import PaymentsTable from "@/components/PaymentsTable";
 import InvoiceForm from "@/components/InvoiceForm";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { fetchWorkerPaymentRows } from "@/lib/paymentsData";
-import { saveWorkerPayments, saveInvoiceInfo } from "@/lib/paymentActions";
+import { saveWorkerPayments, saveInvoiceInfo, uploadInvoiceFile } from "@/lib/paymentActions";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect, notFound } from "next/navigation";
 
@@ -28,6 +28,7 @@ export default async function PaymentDetailPage({ params }) {
   const first = rows[0];
   const boundSaveAction = saveWorkerPayments.bind(null, employee.email);
   const boundInvoiceAction = saveInvoiceInfo.bind(null, params.requisitionId, employee.email);
+  const boundUploadAction = uploadInvoiceFile.bind(null, params.requisitionId, employee.email);
 
   const csvRows = rows.map((r) => ({
     worker: r.worker_name,
@@ -98,15 +99,15 @@ export default async function PaymentDetailPage({ params }) {
       </p>
 
       <div className="card" style={{ marginBottom: 24 }}>
-        <h2 style={{ marginBottom: 14 }}>Vendor invoice</h2>
-        <InvoiceForm action={boundInvoiceAction} initial={requisition} />
+        <h2 style={{ marginBottom: 4 }}>Vendor invoice</h2>
         {requisition?.invoice_file_url && (
-          <p style={{ marginTop: 14, marginBottom: 0 }}>
+          <p style={{ marginTop: 0, marginBottom: 14 }}>
             <a href={requisition.invoice_file_url} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
-              Open invoice file →
+              View attachment →
             </a>
           </p>
         )}
+        <InvoiceForm saveAction={boundInvoiceAction} uploadAction={boundUploadAction} initial={requisition} />
       </div>
 
       <PaymentsTable rows={rows} saveAction={boundSaveAction} csvRows={csvRows} csvColumns={csvColumns} />

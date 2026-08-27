@@ -181,12 +181,12 @@ above, deploy.
   marked, completion status, total amount, payment status, invoice
   number), each linking to its full page for deeper editing. No more
   needing to hop across three pages to understand one requisition's state.
-- **Vendor invoice reference** — a number and a file link (e.g. a Google
-  Drive share link HR pastes in after uploading it themselves) saved
-  against each requisition, clickable to open. This doesn't upload files
-  through the app — it stores a link to a file already in Drive. True
-  in-app upload-to-Drive would need Drive API access configured in Google
-  Cloud Console plus token storage/refresh, which isn't built.
+- **Vendor invoice reference** — a number, plus a real file upload to a
+  Drive folder (uploads through the same Apps Script relay used for
+  email, not the app's own credentials — see `apps-script/Code.gs`).
+  Uploaded files are shared "anyone in the FNP domain with the link,"
+  appropriate for financial documents. Manually pasting a link is still
+  available as a fallback for files already stored elsewhere.
 - **Attendance-to-payment turnaround** — the weekly HR digest now also
   reports the average time from a register being fully marked to a
   worker being marked Paid.

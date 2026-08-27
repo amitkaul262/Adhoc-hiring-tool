@@ -181,6 +181,13 @@ export default async function RequisitionDetailPage({ params }) {
                 {requisition.invoice_number && (
                   <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--ink-muted)" }}>Invoice: {requisition.invoice_number}</p>
                 )}
+                {requisition.invoice_file_url && (
+                  <p style={{ margin: "6px 0 0" }}>
+                    <a href={requisition.invoice_file_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--primary)" }}>
+                      View attachment →
+                    </a>
+                  </p>
+                )}
               </div>
             )}
           </div>

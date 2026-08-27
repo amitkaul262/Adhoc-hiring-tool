@@ -1,20 +1,27 @@
 /**
- * Adhoc Hiring Tool — email relay.
+ * Adhoc Hiring Tool — email + Drive upload relay.
  *
  * This runs entirely inside Google Apps Script, under your own Google
- * account's Gmail permission (not a password of any kind), and just
- * exposes one URL the Next.js app can POST an email request to.
+ * account's Gmail/Drive permission (not a password of any kind), and
+ * exposes one URL the Next.js app can POST requests to — either "send
+ * this email" or "upload this file to Drive".
  *
  * Setup:
- * 1. Project Settings (gear icon) -> Script Properties -> add a property
- *    named SHARED_SECRET with any random string you choose. This is the
- *    "password" that stops random people on the internet from using your
- *    deployed URL to send mail as you.
- * 2. Deploy -> New deployment -> type "Web app" -> Execute as "Me" ->
- *    Who has access "Anyone" -> Deploy. Approve the Gmail permission
- *    prompt when it appears — that's the actual authorization step.
+ * 1. Project Settings (gear icon) -> Script Properties -> add:
+ *    - SHARED_SECRET: any random string you choose (the "password" that
+ *      stops strangers from using your deployed URL as you).
+ *    - DRIVE_FOLDER_ID: the ID of the Drive folder invoices should be
+ *      uploaded into. Open that folder in Drive — the ID is the part of
+ *      the URL after /folders/. The script's Google account needs edit
+ *      access to this folder (it's automatic if that account owns the
+ *      folder; otherwise share the folder with that account first).
+ * 2. Deploy -> New deployment (or Manage deployments -> Edit, if you're
+ *    updating an existing one) -> type "Web app" -> Execute as "Me" ->
+ *    Who has access "Anyone" -> Deploy. Approve both the Gmail AND Drive
+ *    permission prompts when they appear.
  * 3. Copy the resulting URL (ends in /exec) into APPS_SCRIPT_URL in the
- *    Next.js app's env vars, and the same secret into APPS_SCRIPT_SECRET.
+ *    Next.js app's env vars, and the same secret into APPS_SCRIPT_SECRET
+ *    (unchanged if you're updating an existing deployment).
  */
 function doPost(e) {
   try {
@@ -24,24 +31,55 @@ function doPost(e) {
     if (!expectedSecret || body.secret !== expectedSecret) {
       return jsonResponse({ error: "Unauthorized" });
     }
-    if (!body.to || !body.subject || !body.html) {
-      return jsonResponse({ error: "Missing to, subject, or html" });
+
+    if (body.action === "upload_file") {
+      return handleUploadFile(body);
     }
 
-    var options = {
-      htmlBody: body.html,
-      name: "FNP Adhoc Hiring",
-    };
-    if (body.cc) {
-      options.cc = Array.isArray(body.cc) ? body.cc.join(",") : body.cc;
-    }
-
-    GmailApp.sendEmail(body.to, body.subject, "", options);
-
-    return jsonResponse({ success: true });
+    return handleSendEmail(body);
   } catch (err) {
     return jsonResponse({ error: err.message });
   }
+}
+
+function handleSendEmail(body) {
+  if (!body.to || !body.subject || !body.html) {
+    return jsonResponse({ error: "Missing to, subject, or html" });
+  }
+
+  var options = {
+    htmlBody: body.html,
+    name: "FNP Adhoc Hiring",
+  };
+  if (body.cc) {
+    options.cc = Array.isArray(body.cc) ? body.cc.join(",") : body.cc;
+  }
+
+  GmailApp.sendEmail(body.to, body.subject, "", options);
+
+  return jsonResponse({ success: true });
+}
+
+function handleUploadFile(body) {
+  if (!body.fileName || !body.mimeType || !body.fileBase64) {
+    return jsonResponse({ error: "Missing fileName, mimeType, or fileBase64" });
+  }
+
+  var folderId = PropertiesService.getScriptProperties().getProperty("DRIVE_FOLDER_ID");
+  if (!folderId) {
+    return jsonResponse({ error: "DRIVE_FOLDER_ID script property isn't set" });
+  }
+
+  var folder = DriveApp.getFolderById(folderId);
+  var bytes = Utilities.base64Decode(body.fileBase64);
+  var blob = Utilities.newBlob(bytes, body.mimeType, body.fileName);
+  var file = folder.createFile(blob);
+
+  // Restricted to the FNP Workspace domain, not the open internet — an
+  // appropriate default for financial documents like vendor invoices.
+  file.setSharing(DriveApp.Access.DOMAIN_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return jsonResponse({ success: true, fileId: file.getId(), url: file.getUrl() });
 }
 
 function jsonResponse(obj) {
