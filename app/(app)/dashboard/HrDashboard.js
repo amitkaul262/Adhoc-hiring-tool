@@ -116,6 +116,7 @@ export default async function HrDashboard({ employee, searchParams }) {
         <div style={{ display: "flex", gap: 10 }}>
           <Link href="/audit" className="btn btn-secondary">Audit log</Link>
           <Link href="/payments" className="btn btn-secondary">Payments</Link>
+          <Link href="/reports" className="btn btn-secondary">Reports</Link>
           {employee.role === "admin" && (
             <Link href="/admin/people" className="btn btn-secondary">Admin panel</Link>
           )}

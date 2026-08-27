@@ -1,5 +1,6 @@
 import RoleChip from "./RoleChip";
 import ClickableRow from "./ClickableRow";
+import AttachmentLink from "./AttachmentLink";
 
 const STATUS_META = {
   pending: { label: "Pending", cls: "pill-inactive" },
@@ -27,6 +28,7 @@ export default function PaymentsRequisitionTable({ rows }) {
                 <th>Days</th>
                 <th>Amount</th>
                 <th>Status</th>
+                <th>Invoice</th>
               </tr>
             </thead>
             <tbody>
@@ -49,6 +51,11 @@ export default function PaymentsRequisitionTable({ rows }) {
                       )}
                     </td>
                     <td><span className={`pill ${status.cls}`}>{status.label}</span></td>
+                    <td>
+                      {r.invoice_number && <div style={{ fontSize: 12, marginBottom: r.invoice_file_url ? 4 : 0 }}>{r.invoice_number}</div>}
+                      {r.invoice_file_url && <AttachmentLink url={r.invoice_file_url} label="View" />}
+                      {!r.invoice_number && !r.invoice_file_url && <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>—</span>}
+                    </td>
                   </ClickableRow>
                 );
               })}
