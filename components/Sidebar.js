@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useTransition } from "react";
 
 const ICONS = {
   home: (
@@ -66,9 +67,21 @@ const ICONS = {
 };
 
 function NavItem({ href, icon, label, active }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  function handleClick(e) {
+    // Don't hijack modifier-clicks or middle-click — people expect those
+    // to open in a new tab, and preventing default unconditionally would
+    // break that.
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    startTransition(() => router.push(href));
+  }
+
   return (
-    <Link href={href} className="sidebar-item" data-active={active}>
-      <span className="sidebar-icon">{ICONS[icon]}</span>
+    <Link href={href} className="sidebar-item" data-active={active} data-pending={isPending} onClick={handleClick}>
+      <span className="sidebar-icon">{isPending ? <span className="inline-spinner" aria-hidden="true" /> : ICONS[icon]}</span>
       <span>{label}</span>
     </Link>
   );

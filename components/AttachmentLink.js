@@ -10,10 +10,12 @@ function extractDriveFileId(url) {
 
 export default function AttachmentLink({ url, label = "View attachment" }) {
   const [open, setOpen] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   const fileId = extractDriveFileId(url);
 
   useEffect(() => {
     if (!open) return;
+    setIframeLoaded(false);
     function handleKey(e) {
       if (e.key === "Escape") setOpen(false);
     }
@@ -53,12 +55,22 @@ export default function AttachmentLink({ url, label = "View attachment" }) {
                 </button>
               </div>
             </div>
-            <iframe
-              src={`https://drive.google.com/file/d/${fileId}/preview`}
-              className="modal-iframe"
-              allow="autoplay"
-              title="Invoice attachment preview"
-            />
+            <div className="modal-iframe-wrap">
+              <iframe
+                src={`https://drive.google.com/file/d/${fileId}/preview`}
+                className="modal-iframe"
+                allow="autoplay"
+                title="Invoice attachment preview"
+                onLoad={() => setIframeLoaded(true)}
+                style={{ opacity: iframeLoaded ? 1 : 0, transition: "opacity 0.15s" }}
+              />
+              {!iframeLoaded && (
+                <div className="modal-iframe-loading">
+                  <span className="inline-spinner" aria-hidden="true" />
+                  <span>Loading attachment…</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
