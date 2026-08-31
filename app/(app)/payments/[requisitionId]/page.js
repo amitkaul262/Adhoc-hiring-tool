@@ -22,7 +22,7 @@ export default async function PaymentDetailPage({ params }) {
   const supabase = createSupabaseServerClient();
   const { data: requisition } = await supabase
     .from("requisitions")
-    .select("invoice_number, invoice_file_url")
+    .select("invoice_number, invoice_file_url, fully_paid_at")
     .eq("requisition_id", params.requisitionId)
     .single();
 
@@ -99,6 +99,18 @@ export default async function PaymentDetailPage({ params }) {
         {first.store_name} · {first.vendor_name || "No vendor assigned"} · {rows.length} worker{rows.length > 1 ? "s" : ""}
       </p>
 
+      {requisition?.fully_paid_at && employee.role !== "admin" && (
+        <div className="card" style={{ marginBottom: 20, background: "var(--warn-tint)", borderColor: "var(--warn)" }}>
+          <p style={{ margin: 0, fontWeight: 600, color: "#8A5A11" }}>
+            This requisition is fully paid
+          </p>
+          <p style={{ margin: "4px 0 0", fontSize: 13 }}>
+            Every worker has been marked paid, so this is locked to admin-only edits — payment info,
+            attendance, and the invoice can no longer be changed except by an admin.
+          </p>
+        </div>
+      )}
+
       <div className="card" style={{ marginBottom: 24 }}>
         <h2 style={{ marginBottom: 4 }}>Vendor invoice</h2>
         {requisition?.invoice_file_url && (
@@ -106,10 +118,21 @@ export default async function PaymentDetailPage({ params }) {
             <AttachmentLink url={requisition.invoice_file_url} />
           </p>
         )}
-        <InvoiceForm saveAction={boundInvoiceAction} uploadAction={boundUploadAction} initial={requisition} />
+        <InvoiceForm
+          saveAction={boundInvoiceAction}
+          uploadAction={boundUploadAction}
+          initial={requisition}
+          readOnly={!!requisition?.fully_paid_at && employee.role !== "admin"}
+        />
       </div>
 
-      <PaymentsTable rows={rows} saveAction={boundSaveAction} csvRows={csvRows} csvColumns={csvColumns} />
+      <PaymentsTable
+        rows={rows}
+        saveAction={boundSaveAction}
+        csvRows={csvRows}
+        csvColumns={csvColumns}
+        readOnly={!!requisition?.fully_paid_at && employee.role !== "admin"}
+      />
     </div>
   );
 }

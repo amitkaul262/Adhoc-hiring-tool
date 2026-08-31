@@ -530,3 +530,137 @@ alter table requisition_workers add column if not exists paid_at timestamptz;
 -- gap in that migration, not a config issue on your end.
 -- ============================================================
 alter table requisition_attendance drop column if exists workers_present;
+
+-- ============================================================
+-- MIGRATION 10 — Once a requisition is fully paid (every worker
+-- on it marked "paid"), lock it to admin-only edits. HR and the
+-- store manager retain read access but can no longer touch
+-- attendance, worker payment info, or the requisition record
+-- itself (including invoice fields). Admin is unaffected.
+-- ============================================================
+alter table requisitions add column if not exists fully_paid_at timestamptz;
+
+-- Attendance — store manager
+drop policy if exists "store manager marks own attendance" on requisition_attendance;
+create policy "store manager marks own attendance" on requisition_attendance
+  for all using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+        and r.fully_paid_at is null
+    )
+  )
+  with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+        and r.fully_paid_at is null
+    )
+  );
+
+-- Attendance — HR/admin. Admin keeps access even once fully paid;
+-- HR loses it once fully paid, same as everyone but admin.
+drop policy if exists "hr admin full access to attendance" on requisition_attendance;
+create policy "hr admin full access to attendance" on requisition_attendance
+  for all using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.attendance_frozen = false
+        and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
+    )
+  )
+  with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.attendance_frozen = false
+        and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
+    )
+  );
+
+-- Worker records (names etc.) — store manager
+drop policy if exists "store manager manages own workers" on requisition_workers;
+create policy "store manager manages own workers" on requisition_workers
+  for all using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+        and r.fully_paid_at is null
+    )
+  )
+  with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+        and r.fully_paid_at is null
+    )
+  );
+
+-- Worker records — HR/admin
+drop policy if exists "hr admin manages workers" on requisition_workers;
+create policy "hr admin manages workers" on requisition_workers
+  for all using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.attendance_frozen = false
+        and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
+    )
+  )
+  with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.attendance_frozen = false
+        and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
+    )
+  );
+
+-- Payment info itself (rate/status/remarks) — the critical one. HR can
+-- still complete the transition INTO fully-paid (fully_paid_at is still
+-- null in requisitions at the moment that last save happens — it only
+-- gets set afterward, once this update has already succeeded), but
+-- can't touch anything on an ALREADY fully-paid requisition after that.
+drop policy if exists "hr admin updates payment info" on requisition_workers;
+create policy "hr admin updates payment info" on requisition_workers
+  for update using (
+    is_admin()
+    or (
+      is_hr_or_admin()
+      and exists (
+        select 1 from requisitions r
+        where r.requisition_id = requisition_workers.requisition_id
+          and r.fully_paid_at is null
+      )
+    )
+  )
+  with check (
+    is_admin()
+    or (
+      is_hr_or_admin()
+      and exists (
+        select 1 from requisitions r
+        where r.requisition_id = requisition_workers.requisition_id
+          and r.fully_paid_at is null
+      )
+    )
+  );
+
+-- The requisition record itself (invoice fields etc.)
+drop policy if exists "hr admin updates requisitions" on requisitions;
+create policy "hr admin updates requisitions" on requisitions
+  for update using (is_admin() or (is_hr_or_admin() and fully_paid_at is null))
+  with check (is_admin() or (is_hr_or_admin() and fully_paid_at is null));

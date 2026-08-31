@@ -104,6 +104,8 @@ export default async function AttendancePage({ params }) {
   const boundAction = markAttendance.bind(null, requisition.requisition_id, employee.email);
   const unfreezeAction = unfreezeAttendance.bind(null, requisition.requisition_id, employee.email);
   const isFrozen = !!requisition.attendance_frozen;
+  const isFullyPaid = !!requisition.fully_paid_at;
+  const isLockedForRole = isFrozen || (isFullyPaid && employee.role !== "admin");
 
   return (
     <div className="container" style={{ maxWidth: 900 }}>
@@ -118,6 +120,18 @@ export default async function AttendancePage({ params }) {
           {requisition.store_name} · {formatRange(requisition.from_date, requisition.to_date)} ·{" "}
           {requisition.number_of_workers} sanctioned
         </p>
+
+        {isFullyPaid && employee.role !== "admin" && (
+          <div className="card" style={{ marginBottom: 20, background: "var(--warn-tint)", borderColor: "var(--warn)" }}>
+            <p style={{ margin: 0, fontWeight: 600, color: "#8A5A11" }}>
+              This requisition is fully paid
+            </p>
+            <p style={{ margin: "4px 0 0", fontSize: 13 }}>
+              Attendance is locked to admin-only edits now that every worker has been paid, to keep
+              the record consistent with what was actually paid out.
+            </p>
+          </div>
+        )}
 
         {isFrozen && (
           <div className="card" style={{ marginBottom: 20, background: "var(--danger-tint)", borderColor: "var(--danger)" }}>
@@ -155,7 +169,7 @@ export default async function AttendancePage({ params }) {
           workers={workers}
           existing={existing}
           requisitionId={requisition.requisition_id}
-          readOnly={isFrozen}
+          readOnly={isLockedForRole}
         />
     </div>
   );

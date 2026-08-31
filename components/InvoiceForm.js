@@ -14,7 +14,7 @@ function SaveButton({ label, pendingLabel }) {
   );
 }
 
-export default function InvoiceForm({ saveAction, uploadAction, initial }) {
+export default function InvoiceForm({ saveAction, uploadAction, initial, readOnly = false }) {
   const hasExisting = !!(initial?.invoice_number || initial?.invoice_file_url);
   const [isEditing, setIsEditing] = useState(!hasExisting);
 
@@ -27,6 +27,21 @@ export default function InvoiceForm({ saveAction, uploadAction, initial }) {
   useEffect(() => {
     if (saveState?.success || uploadState?.success) setIsEditing(false);
   }, [saveState, uploadState]);
+
+  if (readOnly) {
+    return (
+      <div>
+        {hasExisting ? (
+          <>
+            {initial.invoice_number && <p style={{ margin: "0 0 10px", fontWeight: 600 }}>{initial.invoice_number}</p>}
+            {initial.invoice_file_url && <AttachmentLink url={initial.invoice_file_url} />}
+          </>
+        ) : (
+          <p style={{ margin: 0, color: "var(--ink-muted)", fontSize: 13 }}>No invoice on file.</p>
+        )}
+      </div>
+    );
+  }
 
   if (hasExisting && !isEditing) {
     return (

@@ -30,7 +30,7 @@ const CSV_COLUMNS = [
   { key: "remarks", label: "Remarks" },
 ];
 
-export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns }) {
+export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns, readOnly = false }) {
   const [state, formAction] = useToastFormState(saveAction, { error: null, success: false }, "Payment info saved.");
   const [edits, setEdits] = useState(() =>
     Object.fromEntries(
@@ -100,7 +100,7 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns })
       {state?.error && <p className="form-error">{state.error}</p>}
       {state?.success && <p style={{ color: "var(--success)", fontWeight: 600, marginBottom: 16 }}>Saved.</p>}
 
-      {selected.size > 0 && (
+      {selected.size > 0 && !readOnly && (
         <div className="bulk-toolbar">
           <span className="bulk-count">{selected.size} selected</span>
           <div className="bulk-action">
@@ -129,9 +129,11 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns })
         <table className="req-table">
           <thead>
             <tr>
-              <th style={{ width: 32 }}>
-                <input type="checkbox" checked={selected.size === rows.length} onChange={toggleAll} aria-label="Select all workers" />
-              </th>
+              {!readOnly && (
+                <th style={{ width: 32 }}>
+                  <input type="checkbox" checked={selected.size === rows.length} onChange={toggleAll} aria-label="Select all workers" />
+                </th>
+              )}
               <th>Worker</th>
               <th>Requisition</th>
               <th>Store</th>
@@ -146,9 +148,11 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns })
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td>
-                  <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleOne(r.id)} aria-label={`Select ${r.worker_name}`} />
-                </td>
+                {!readOnly && (
+                  <td>
+                    <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleOne(r.id)} aria-label={`Select ${r.worker_name}`} />
+                  </td>
+                )}
                 <td style={{ fontWeight: 600 }}>{r.worker_name}</td>
                 <td><Link href={`/requisitions/${r.requisition_id}`} className="req-id">{r.requisition_id}</Link></td>
                 <td>{r.store_name || "-"}</td>
@@ -164,6 +168,7 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns })
                     onChange={(e) => updateEdit(r.id, "rate_per_day", e.target.value)}
                     style={{ width: 90, padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 6 }}
                     aria-label={`Rate per day for ${r.worker_name}`}
+                    disabled={readOnly}
                   />
                 </td>
                 <td style={{ fontWeight: 600 }}>
@@ -174,6 +179,7 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns })
                     value={edits[r.id]?.payment_status ?? "pending"}
                     onChange={(e) => updateEdit(r.id, "payment_status", e.target.value)}
                     style={{ padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13 }}
+                    disabled={readOnly}
                   >
                     {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
@@ -186,6 +192,7 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns })
                     placeholder="Notes"
                     style={{ width: 140, padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13 }}
                     aria-label={`Remarks for ${r.worker_name}`}
+                    disabled={readOnly}
                   />
                 </td>
               </tr>
@@ -195,7 +202,7 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns })
       </div>
 
       <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
-        <SubmitButton />
+        {!readOnly && <SubmitButton />}
         <ExportCsvButton filename="payments.csv" columns={csvColumns || CSV_COLUMNS} rows={csvRows} />
       </div>
     </form>
