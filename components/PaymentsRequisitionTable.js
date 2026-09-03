@@ -44,6 +44,11 @@ export default function PaymentsRequisitionTable({ rows }) {
                     <td style={{ textAlign: "center" }}>{r.total_days}</td>
                     <td style={{ fontWeight: 600 }}>
                       ₹{r.total_amount.toLocaleString("en-IN")}
+                      {r.total_gst_amount > 0 && (
+                        <div style={{ fontSize: 11, fontWeight: 400, color: "var(--ink-faint)" }}>
+                          incl. ₹{Math.round(r.total_gst_amount).toLocaleString("en-IN")} GST
+                        </div>
+                      )}
                       {r.rate_missing_count > 0 && (
                         <span style={{ color: "var(--warn)", fontSize: 11, marginLeft: 6 }}>
                           ({r.rate_missing_count} unrated)

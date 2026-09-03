@@ -23,9 +23,12 @@ const CSV_COLUMNS = [
   { key: "worker_type", label: "Worker Type" },
   { key: "store", label: "Store" },
   { key: "vendor", label: "Vendor" },
+  { key: "gst_percentage", label: "GST %" },
   { key: "days", label: "Effective Days" },
   { key: "rate", label: "Rate/Day" },
-  { key: "amount", label: "Amount" },
+  { key: "base_amount", label: "Base Amount" },
+  { key: "gst_amount", label: "GST Amount" },
+  { key: "amount", label: "Total Amount" },
   { key: "status", label: "Payment Status" },
   { key: "remarks", label: "Remarks" },
 ];
@@ -82,7 +85,11 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns, r
     const amounts = {};
     for (const r of rows) {
       const rate = Number(edits[r.id]?.rate_per_day);
-      amounts[r.id] = rate > 0 ? Math.round(rate * r.effective_days * 100) / 100 : null;
+      const base = rate > 0 ? Math.round(rate * r.effective_days * 100) / 100 : null;
+      const gstPct = r.gst_percentage ?? 0;
+      const gst = base !== null ? Math.round(base * (gstPct / 100) * 100) / 100 : null;
+      const total = base !== null ? Math.round((base + gst) * 100) / 100 : null;
+      amounts[r.id] = { base, gst, total, gstPct };
     }
     return amounts;
   }, [edits, rows]);
@@ -138,6 +145,7 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns, r
               <th>Requisition</th>
               <th>Store</th>
               <th>Vendor</th>
+              <th>GST</th>
               <th>Days</th>
               <th>Rate/day</th>
               <th>Amount</th>
@@ -157,6 +165,9 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns, r
                 <td><Link href={`/requisitions/${r.requisition_id}`} className="req-id">{r.requisition_id}</Link></td>
                 <td>{r.store_name || "-"}</td>
                 <td>{r.vendor_name || <span style={{ color: "var(--ink-faint)" }}>Not assigned</span>}</td>
+                <td style={{ textAlign: "center", fontSize: 12, color: "var(--ink-muted)" }}>
+                  {r.gst_percentage ? `${r.gst_percentage}%` : "—"}
+                </td>
                 <td style={{ textAlign: "center" }}>{r.effective_days}</td>
                 <td>
                   <input
@@ -172,7 +183,18 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns, r
                   />
                 </td>
                 <td style={{ fontWeight: 600 }}>
-                  {liveAmounts[r.id] !== null ? `₹${liveAmounts[r.id].toLocaleString("en-IN")}` : "—"}
+                  {liveAmounts[r.id]?.total !== null && liveAmounts[r.id]?.total !== undefined ? (
+                    <>
+                      ₹{liveAmounts[r.id].total.toLocaleString("en-IN")}
+                      {liveAmounts[r.id].gstPct > 0 && (
+                        <div style={{ fontSize: 11, fontWeight: 400, color: "var(--ink-faint)" }}>
+                          ₹{liveAmounts[r.id].base.toLocaleString("en-IN")} + {liveAmounts[r.id].gstPct}% GST
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td>
                   <select

@@ -664,3 +664,13 @@ drop policy if exists "hr admin updates requisitions" on requisitions;
 create policy "hr admin updates requisitions" on requisitions
   for update using (is_admin() or (is_hr_or_admin() and fully_paid_at is null))
   with check (is_admin() or (is_hr_or_admin() and fully_paid_at is null));
+
+-- ============================================================
+-- MIGRATION 11 — GST per vendor, factored into payment amounts.
+-- Different vendors charge different GST rates (0%, 18%, etc.)
+-- — this is a vendor-level attribute, applied on top of the
+-- base amount (rate x effective attendance days) to get the
+-- final payable amount.
+-- ============================================================
+alter table vendors add column if not exists gst_percentage numeric(5,2) not null default 0
+  check (gst_percentage >= 0 and gst_percentage <= 100);

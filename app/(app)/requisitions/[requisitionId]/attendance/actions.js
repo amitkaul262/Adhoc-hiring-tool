@@ -127,3 +127,59 @@ export async function unfreezeAttendance(requisitionId, adminEmail, prevState, f
   revalidatePath(`/requisitions/${requisitionId}/attendance`);
   return { error: null, success: true };
 }
+
+// HR/admin adjusts the actual deployed roster when it differs from the
+// sanctioned headcount (e.g. store manager asked for 10, vendor could
+// only supply 8) — adds one more worker slot at the next available
+// number. number_of_workers on the requisition itself is left
+// untouched, preserving what was originally sanctioned for reporting.
+export async function addWorkerSlot(requisitionId, prevState, formData) {
+  if (PREVIEW_MODE) {
+    return { error: "Preview mode — this isn't connected to Supabase yet." };
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data: existing } = await supabase
+    .from("requisition_workers")
+    .select("slot_number")
+    .eq("requisition_id", requisitionId)
+    .order("slot_number", { ascending: false })
+    .limit(1);
+
+  const nextSlot = (existing?.[0]?.slot_number || 0) + 1;
+  const { error } = await supabase
+    .from("requisition_workers")
+    .insert({ requisition_id: requisitionId, slot_number: nextSlot });
+
+  if (error) {
+    console.error("addWorkerSlot failed:", error);
+    return { error: "Couldn't add a worker. Please try again." };
+  }
+
+  revalidatePath(`/requisitions/${requisitionId}/attendance`);
+  return { error: null, success: true };
+}
+
+// Removing a worker also removes their attendance rows (cascade delete
+// on the foreign key) — meant for correcting a headcount that was never
+// actually deployed, not for undoing attendance someone already worked.
+export async function removeWorkerSlot(requisitionId, workerId, prevState, formData) {
+  if (PREVIEW_MODE) {
+    return { error: "Preview mode — this isn't connected to Supabase yet." };
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase
+    .from("requisition_workers")
+    .delete()
+    .eq("id", workerId)
+    .eq("requisition_id", requisitionId);
+
+  if (error) {
+    console.error("removeWorkerSlot failed:", error);
+    return { error: "Couldn't remove that worker. Please try again." };
+  }
+
+  revalidatePath(`/requisitions/${requisitionId}/attendance`);
+  return { error: null, success: true };
+}

@@ -38,6 +38,21 @@ export default function VendorForm({ action, initial, isEdit = false }) {
           <input id="contact_phone" name="contact_phone" type="tel" defaultValue={v.contact_phone || ""} />
         </div>
       </div>
+      <div className="field">
+        <label htmlFor="gst_percentage">GST rate (%)</label>
+        <input
+          id="gst_percentage"
+          name="gst_percentage"
+          type="number"
+          min="0"
+          max="100"
+          step="0.01"
+          defaultValue={v.gst_percentage ?? 0}
+        />
+        <p className="hint" style={{ marginTop: 4 }}>
+          Applied on top of the base amount when calculating what this vendor is owed. Use 0 if they don&apos;t charge GST.
+        </p>
+      </div>
 
       {isEdit && (
         <div className="field" style={{ display: "flex", alignItems: "center", gap: 8 }}>

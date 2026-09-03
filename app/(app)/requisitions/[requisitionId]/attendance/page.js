@@ -2,7 +2,7 @@ import RoleChip from "@/components/RoleChip";
 import BackLink from "@/components/BackLink";
 import UnfreezeButton from "@/components/UnfreezeButton";
 import AttendanceForm from "./AttendanceForm";
-import { markAttendance, unfreezeAttendance } from "./actions";
+import { markAttendance, unfreezeAttendance, addWorkerSlot, removeWorkerSlot } from "./actions";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabaseServer";
 import { PREVIEW_MODE, MOCK_REQUISITIONS, MOCK_WORKERS, MOCK_WORKER_ATTENDANCE } from "@/lib/mockData";
@@ -102,6 +102,8 @@ export default async function AttendancePage({ params }) {
 
   const dates = dateRange(requisition.from_date, requisition.to_date);
   const boundAction = markAttendance.bind(null, requisition.requisition_id, employee.email);
+  const boundAddWorker = addWorkerSlot.bind(null, requisition.requisition_id);
+  const boundRemoveWorker = removeWorkerSlot.bind(null, requisition.requisition_id);
   const unfreezeAction = unfreezeAttendance.bind(null, requisition.requisition_id, employee.email);
   const isFrozen = !!requisition.attendance_frozen;
   const isFullyPaid = !!requisition.fully_paid_at;
@@ -165,11 +167,14 @@ export default async function AttendancePage({ params }) {
 
         <AttendanceForm
           action={boundAction}
+          addWorkerAction={boundAddWorker}
+          removeWorkerAction={boundRemoveWorker}
           dates={dates}
           workers={workers}
           existing={existing}
           requisitionId={requisition.requisition_id}
           readOnly={isLockedForRole}
+          canManageRoster={["hr", "admin"].includes(employee.role)}
         />
     </div>
   );

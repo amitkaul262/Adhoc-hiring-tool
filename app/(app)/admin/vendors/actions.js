@@ -5,11 +5,14 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 function readVendorFields(formData) {
+  const gstRaw = formData.get("gst_percentage");
+  const gst = gstRaw === null || gstRaw === "" ? 0 : Number(gstRaw);
   return {
     name: (formData.get("name") || "").toString().trim(),
     contact_name: (formData.get("contact_name") || "").toString().trim() || null,
     contact_email: (formData.get("contact_email") || "").toString().trim() || null,
     contact_phone: (formData.get("contact_phone") || "").toString().trim() || null,
+    gst_percentage: isNaN(gst) ? 0 : Math.max(0, Math.min(100, gst)),
   };
 }
 

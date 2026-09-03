@@ -31,7 +31,7 @@ function dayMeta(dateStr) {
   return { weekday, label, isWeekend };
 }
 
-export default function AttendanceForm({ action, dates, workers, existing, requisitionId, readOnly = false }) {
+export default function AttendanceForm({ action, addWorkerAction, removeWorkerAction, dates, workers, existing, requisitionId, readOnly = false, canManageRoster = false }) {
   const [state, formAction] = useToastFormState(action, { error: null, success: false }, "Register saved.");
 
   const [values, setValues] = useState(() => {
@@ -103,6 +103,11 @@ export default function AttendanceForm({ action, dates, workers, existing, requi
         <p className="hint" style={{ marginTop: 0 }}>
           F = Full Day · ½ = Half Day · A = Absent · L = Leave. Click a cell to cycle through statuses.
         </p>
+        {canManageRoster && !readOnly && (
+          <div style={{ marginBottom: 4 }}>
+            <AddWorkerButton action={addWorkerAction} />
+          </div>
+        )}
       </div>
 
       <div className="table-scroll">
@@ -120,6 +125,7 @@ export default function AttendanceForm({ action, dates, workers, existing, requi
                 );
               })}
               <th>Total</th>
+              {canManageRoster && !readOnly && <th style={{ width: 36 }}></th>}
             </tr>
           </thead>
           <tbody>
@@ -152,6 +158,15 @@ export default function AttendanceForm({ action, dates, workers, existing, requi
                 <td className="register-muted" style={{ textAlign: "center", fontWeight: 600 }}>
                   {workerTotals[w.id]}
                 </td>
+                {canManageRoster && !readOnly && (
+                  <td style={{ textAlign: "center" }}>
+                    <RemoveWorkerButton
+                      action={removeWorkerAction}
+                      workerId={w.id}
+                      workerName={names[w.id] || `Worker ${w.slot_number}`}
+                    />
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -163,7 +178,7 @@ export default function AttendanceForm({ action, dates, workers, existing, requi
               <td colSpan={dates.length - 1} className="register-summary-value">
                 F: {summary.counts.full_day} · ½: {summary.counts.half_day} · A: {summary.counts.absent} · L: {summary.counts.leave}
               </td>
-              <td colSpan={2} className="register-summary-value">
+              <td colSpan={canManageRoster && !readOnly ? 3 : 2} className="register-summary-value">
                 {summary.rate === null ? "—" : `${summary.rate}% attendance`}
               </td>
             </tr>
@@ -218,5 +233,56 @@ function StatusCell({ value, onChange, disabled, label }) {
     >
       {meta.short}
     </button>
+  );
+}
+
+function AddSubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" className="btn btn-secondary btn-sm" disabled={pending}>
+      {pending ? "Adding…" : "+ Add worker"}
+    </button>
+  );
+}
+
+// Lets HR correct the roster when fewer (or more) workers were actually
+// deployed than sanctioned — e.g. store manager asked for 10, the vendor
+// could only supply 8. number_of_workers on the requisition itself is
+// untouched, so what was originally asked for stays visible in reports.
+function AddWorkerButton({ action }) {
+  const [, formAction] = useToastFormState(action, { error: null }, "Worker added.");
+  return (
+    <form action={formAction}>
+      <AddSubmitButton />
+    </form>
+  );
+}
+
+function RemoveSubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" className="worker-remove-btn" disabled={pending} aria-label="Remove worker" title="Remove worker">
+      {pending ? "…" : "×"}
+    </button>
+  );
+}
+
+// Removing a worker also deletes their attendance rows (cascade on the
+// foreign key) — the confirm() is deliberate friction for a destructive,
+// hard-to-undo action.
+function RemoveWorkerButton({ action, workerId, workerName }) {
+  const boundAction = useMemo(() => action.bind(null, workerId), [action, workerId]);
+  const [, formAction] = useToastFormState(boundAction, { error: null }, `${workerName} removed.`);
+  return (
+    <form
+      action={formAction}
+      onSubmit={(e) => {
+        if (!confirm(`Remove ${workerName}? This also deletes their attendance records for this requisition — this can't be undone.`)) {
+          e.preventDefault();
+        }
+      }}
+    >
+      <RemoveSubmitButton />
+    </form>
   );
 }
