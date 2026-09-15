@@ -15,7 +15,23 @@ export default async function PaymentsPage({ searchParams }) {
     redirect("/dashboard");
   }
 
-  const { rows, vendors } = await fetchWorkerPaymentRows();
+  const { rows, vendors, error: fetchError } = await fetchWorkerPaymentRows();
+
+  if (fetchError) {
+    return (
+      <div className="container-wide">
+        <span className="eyebrow">HR</span>
+        <div className="section-header"><h1>Payments</h1></div>
+        <div className="card" style={{ background: "var(--danger-tint)", borderColor: "var(--danger)" }}>
+          <p style={{ margin: 0, fontWeight: 600, color: "var(--danger)" }}>Couldn&apos;t load payment data</p>
+          <p style={{ margin: "4px 0 0", fontSize: 13 }}>
+            Most likely a database migration hasn&apos;t been run yet. Try re-running the full
+            schema.sql (it&apos;s safe to run again). Details: {fetchError}
+          </p>
+        </div>
+      </div>
+    );
+  }
   let summary = summarizeByRequisition(rows);
 
   if (searchParams?.vendor) summary = summary.filter((r) => r.vendor_id === searchParams.vendor);

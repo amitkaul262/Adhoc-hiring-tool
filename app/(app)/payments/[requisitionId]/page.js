@@ -16,7 +16,23 @@ export default async function PaymentDetailPage({ params }) {
     redirect("/dashboard");
   }
 
-  const { rows } = await fetchWorkerPaymentRows(params.requisitionId);
+  const { rows, error: fetchError } = await fetchWorkerPaymentRows(params.requisitionId);
+
+  if (fetchError) {
+    return (
+      <div className="container-wide">
+        <BackLink href="/payments" label="Back to payments" />
+        <div className="card" style={{ marginTop: 20, background: "var(--danger-tint)", borderColor: "var(--danger)" }}>
+          <p style={{ margin: 0, fontWeight: 600, color: "var(--danger)" }}>Couldn&apos;t load this page</p>
+          <p style={{ margin: "4px 0 0", fontSize: 13 }}>
+            Something went wrong loading payment data — most likely a database migration hasn&apos;t
+            been run yet. Try re-running the full schema.sql (it&apos;s safe to run again). Details:{" "}
+            {fetchError}
+          </p>
+        </div>
+      </div>
+    );
+  }
   if (rows.length === 0) notFound();
 
   const supabase = createSupabaseServerClient();
