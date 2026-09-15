@@ -674,3 +674,175 @@ create policy "hr admin updates requisitions" on requisitions
 -- ============================================================
 alter table vendors add column if not exists gst_percentage numeric(5,2) not null default 0
   check (gst_percentage >= 0 and gst_percentage <= 100);
+
+-- ============================================================
+-- MIGRATION 12 — Fix a real bug: the "for all" policies on
+-- requisition_attendance and requisition_workers combined READ
+-- and WRITE permission under one condition. That's correct for
+-- writes (frozen/fully-paid should block edits) but wrong for
+-- reads — it meant HR lost ALL VISIBILITY (not just edit rights)
+-- into any frozen or fully-paid requisition's attendance and
+-- worker records, causing "no worker slots yet" / empty payment
+-- pages / duplicate-key errors when the app wrongly concluded no
+-- workers existed yet and tried to recreate them. Viewing history
+-- must always work; only editing should be locked down.
+-- ============================================================
+
+-- ---------- requisition_attendance ----------
+drop policy if exists "store manager marks own attendance" on requisition_attendance;
+drop policy if exists "hr admin full access to attendance" on requisition_attendance;
+
+-- READ: unconditional once you're the owner or HR/admin — never gated
+-- by frozen or fully-paid state. Viewing a closed-out record is always
+-- legitimate; it's only editing that should ever be restricted.
+create policy "read attendance for visible requisitions" on requisition_attendance
+  for select using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and (r.raised_by_email = auth.jwt() ->> 'email' or is_hr_or_admin())
+    )
+  );
+
+create policy "store manager inserts own attendance" on requisition_attendance
+  for insert with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+        and r.fully_paid_at is null
+    )
+  );
+create policy "store manager updates own attendance" on requisition_attendance
+  for update using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+        and r.fully_paid_at is null
+    )
+  )
+  with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+        and r.fully_paid_at is null
+    )
+  );
+create policy "store manager deletes own attendance" on requisition_attendance
+  for delete using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+        and r.fully_paid_at is null
+    )
+  );
+
+create policy "hr admin inserts attendance" on requisition_attendance
+  for insert with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.attendance_frozen = false
+        and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
+    )
+  );
+create policy "hr admin updates attendance" on requisition_attendance
+  for update using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.attendance_frozen = false
+        and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
+    )
+  )
+  with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.attendance_frozen = false
+        and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
+    )
+  );
+create policy "hr admin deletes attendance" on requisition_attendance
+  for delete using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_attendance.requisition_id
+        and r.attendance_frozen = false
+        and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
+    )
+  );
+
+-- ---------- requisition_workers ----------
+drop policy if exists "store manager manages own workers" on requisition_workers;
+drop policy if exists "hr admin manages workers" on requisition_workers;
+
+create policy "read workers for visible requisitions" on requisition_workers
+  for select using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and (r.raised_by_email = auth.jwt() ->> 'email' or is_hr_or_admin())
+    )
+  );
+
+create policy "store manager updates own workers" on requisition_workers
+  for update using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+        and r.fully_paid_at is null
+    )
+  )
+  with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.raised_by_email = auth.jwt() ->> 'email'
+        and r.status = 'approved'
+        and r.attendance_frozen = false
+        and r.fully_paid_at is null
+    )
+  );
+
+-- Adding/removing worker slots is an HR/admin-only action at the app
+-- layer (see addWorkerSlot/removeWorkerSlot) — the system itself
+-- auto-creates the initial slots via the admin client, which bypasses
+-- RLS, so no store-manager insert policy is needed here.
+create policy "hr admin inserts workers" on requisition_workers
+  for insert with check (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.attendance_frozen = false
+        and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
+    )
+  );
+create policy "hr admin deletes workers" on requisition_workers
+  for delete using (
+    exists (
+      select 1 from requisitions r
+      where r.requisition_id = requisition_workers.requisition_id
+        and r.attendance_frozen = false
+        and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
+    )
+  );
+-- Note: HR/admin UPDATE (renaming a worker, or editing rate/status/
+-- remarks) is already fully covered by "hr admin updates payment info"
+-- below — it was never gated by attendance_frozen and already allows
+-- any update as long as not fully paid (or admin), so no separate
+-- policy is needed here.
