@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { fetchMasterReport } from "@/lib/reportsData";
 import ReportsTable from "@/components/ReportsTable";
@@ -113,6 +114,7 @@ export default async function ReportsPage({ searchParams }) {
       <span className="eyebrow">HR</span>
       <div className="section-header">
         <h1>Reports</h1>
+        <Link href="/reports/vendor-wise" className="btn btn-secondary">Payments by vendor →</Link>
       </div>
       <p style={{ marginBottom: 20 }}>
         Every requisition, start to paid — raised, decided, vendor assigned, attendance completed,

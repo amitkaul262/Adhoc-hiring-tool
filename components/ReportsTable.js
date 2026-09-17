@@ -61,7 +61,12 @@ export default function ReportsTable({ rows }) {
                     <td>{r.store_name || "-"}</td>
                     <td style={{ fontSize: 12, color: "var(--ink-muted)" }}>{formatDate(r.raised_at)}</td>
                     <td><span className={`pill ${DECISION_CLS[r.decision] || "pill-inactive"}`}>{r.decision}</span></td>
-                    <td>{r.vendor_name || <span style={{ color: "var(--ink-faint)" }}>—</span>}</td>
+                    <td>
+                      {r.vendor_name || <span style={{ color: "var(--ink-faint)" }}>—</span>}
+                      {r.is_split_across_vendors && (
+                        <span style={{ display: "block", fontSize: 11, color: "var(--warn)" }}>split</span>
+                      )}
+                    </td>
                     <td style={{ fontSize: 12 }}>{attendanceLabel}</td>
                     <td style={{ fontWeight: 600 }}>{r.total_amount > 0 ? `₹${r.total_amount.toLocaleString("en-IN")}` : "—"}</td>
                     <td>{payment ? <span className={`pill ${payment.cls}`}>{payment.label}</span> : <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>—</span>}</td>

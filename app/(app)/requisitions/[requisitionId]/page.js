@@ -182,6 +182,14 @@ export default async function RequisitionDetailPage({ params }) {
                     <span style={{ color: "var(--warn)", fontSize: 12 }}> ({paymentSummary.rate_missing_count} unrated)</span>
                   )}
                 </p>
+                {paymentSummary.vendor_name && (
+                  <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--ink-muted)" }}>
+                    {paymentSummary.vendor_name}
+                    {paymentSummary.is_split_across_vendors && (
+                      <span style={{ color: "var(--warn)" }}> (split across vendors — see Payments for the breakdown)</span>
+                    )}
+                  </p>
+                )}
                 <span className={`pill ${paymentSummary.rollup_status === "paid" ? "pill-active" : paymentSummary.rollup_status === "pending" ? "pill-inactive" : "pill"}`} style={{ marginTop: 8, display: "inline-block" }}>
                   {paymentSummary.rollup_status === "paid" ? "Paid" : paymentSummary.rollup_status === "pending" ? "Pending" : "Partial"}
                 </span>
