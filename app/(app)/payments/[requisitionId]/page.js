@@ -36,7 +36,7 @@ export default async function PaymentDetailPage({ params }) {
   if (rows.length === 0) notFound();
 
   const supabase = createSupabaseServerClient();
-  const [{ data: requisition }, { data: activeVendors }] = await Promise.all([
+  const [{ data: requisition }, { data: activeVendors, error: vendorsError }] = await Promise.all([
     supabase
       .from("requisitions")
       .select("invoice_number, invoice_file_url, fully_paid_at")
@@ -44,6 +44,10 @@ export default async function PaymentDetailPage({ params }) {
       .single(),
     supabase.from("vendors").select("id, name, gst_percentage").eq("is_active", true).order("name"),
   ]);
+
+  if (vendorsError) {
+    console.error("payments detail page: vendors query failed", vendorsError);
+  }
 
   const first = rows[0];
   const boundSaveAction = saveWorkerPayments.bind(null, employee.email);
