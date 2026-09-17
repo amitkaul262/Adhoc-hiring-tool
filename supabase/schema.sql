@@ -695,6 +695,7 @@ drop policy if exists "hr admin full access to attendance" on requisition_attend
 -- READ: unconditional once you're the owner or HR/admin — never gated
 -- by frozen or fully-paid state. Viewing a closed-out record is always
 -- legitimate; it's only editing that should ever be restricted.
+drop policy if exists "read attendance for visible requisitions" on requisition_attendance;
 create policy "read attendance for visible requisitions" on requisition_attendance
   for select using (
     exists (
@@ -704,6 +705,7 @@ create policy "read attendance for visible requisitions" on requisition_attendan
     )
   );
 
+drop policy if exists "store manager inserts own attendance" on requisition_attendance;
 create policy "store manager inserts own attendance" on requisition_attendance
   for insert with check (
     exists (
@@ -715,6 +717,7 @@ create policy "store manager inserts own attendance" on requisition_attendance
         and r.fully_paid_at is null
     )
   );
+drop policy if exists "store manager updates own attendance" on requisition_attendance;
 create policy "store manager updates own attendance" on requisition_attendance
   for update using (
     exists (
@@ -736,6 +739,7 @@ create policy "store manager updates own attendance" on requisition_attendance
         and r.fully_paid_at is null
     )
   );
+drop policy if exists "store manager deletes own attendance" on requisition_attendance;
 create policy "store manager deletes own attendance" on requisition_attendance
   for delete using (
     exists (
@@ -748,6 +752,7 @@ create policy "store manager deletes own attendance" on requisition_attendance
     )
   );
 
+drop policy if exists "hr admin inserts attendance" on requisition_attendance;
 create policy "hr admin inserts attendance" on requisition_attendance
   for insert with check (
     exists (
@@ -757,6 +762,7 @@ create policy "hr admin inserts attendance" on requisition_attendance
         and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
     )
   );
+drop policy if exists "hr admin updates attendance" on requisition_attendance;
 create policy "hr admin updates attendance" on requisition_attendance
   for update using (
     exists (
@@ -774,6 +780,7 @@ create policy "hr admin updates attendance" on requisition_attendance
         and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
     )
   );
+drop policy if exists "hr admin deletes attendance" on requisition_attendance;
 create policy "hr admin deletes attendance" on requisition_attendance
   for delete using (
     exists (
@@ -788,6 +795,7 @@ create policy "hr admin deletes attendance" on requisition_attendance
 drop policy if exists "store manager manages own workers" on requisition_workers;
 drop policy if exists "hr admin manages workers" on requisition_workers;
 
+drop policy if exists "read workers for visible requisitions" on requisition_workers;
 create policy "read workers for visible requisitions" on requisition_workers
   for select using (
     exists (
@@ -797,6 +805,7 @@ create policy "read workers for visible requisitions" on requisition_workers
     )
   );
 
+drop policy if exists "store manager updates own workers" on requisition_workers;
 create policy "store manager updates own workers" on requisition_workers
   for update using (
     exists (
@@ -823,6 +832,7 @@ create policy "store manager updates own workers" on requisition_workers
 -- layer (see addWorkerSlot/removeWorkerSlot) — the system itself
 -- auto-creates the initial slots via the admin client, which bypasses
 -- RLS, so no store-manager insert policy is needed here.
+drop policy if exists "hr admin inserts workers" on requisition_workers;
 create policy "hr admin inserts workers" on requisition_workers
   for insert with check (
     exists (
@@ -832,6 +842,7 @@ create policy "hr admin inserts workers" on requisition_workers
         and (is_admin() or (is_hr_or_admin() and r.fully_paid_at is null))
     )
   );
+drop policy if exists "hr admin deletes workers" on requisition_workers;
 create policy "hr admin deletes workers" on requisition_workers
   for delete using (
     exists (
