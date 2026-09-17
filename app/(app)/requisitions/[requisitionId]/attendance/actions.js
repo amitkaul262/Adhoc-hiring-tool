@@ -37,12 +37,15 @@ export async function markAttendance(requisitionId, employeeEmail, prevState, fo
     return { error: "Something went wrong reading the register. Try again." };
   }
 
-  // Worker names first — harmless to update even if unchanged.
+  // Worker names and phone numbers first — harmless to update even if unchanged.
   for (const n of names) {
     if (!n.id) continue;
     await supabase
       .from("requisition_workers")
-      .update({ worker_name: (n.worker_name || "").trim() || null })
+      .update({
+        worker_name: (n.worker_name || "").trim() || null,
+        phone_number: (n.phone_number || "").trim() || null,
+      })
       .eq("id", n.id);
   }
 

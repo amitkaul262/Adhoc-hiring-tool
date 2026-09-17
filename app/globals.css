@@ -1203,3 +1203,17 @@ th.register-date-col[data-weekend="true"] {
 }
 .worker-remove-btn:hover:not(:disabled) { background: var(--danger-tint); color: var(--danger); border-color: var(--danger); }
 .worker-remove-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+
+/* ---------- HOD edit-requisition-terms toggle ---------- */
+.edit-terms-toggle {
+  display: inline-block;
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 20px;
+}
+.edit-terms-toggle:hover { text-decoration: underline; }

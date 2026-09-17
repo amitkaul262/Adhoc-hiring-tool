@@ -4,7 +4,8 @@ import StatusBadge from "@/components/StatusBadge";
 import VendorAssignForm from "@/components/VendorAssignForm";
 import AttachmentLink from "@/components/AttachmentLink";
 import DecisionForms from "./DecisionForms";
-import { decideRequisition } from "./decisionActions";
+import EditRequisitionForm from "./EditRequisitionForm";
+import { decideRequisition, updateRequisitionTerms } from "./decisionActions";
 import { assignVendor } from "@/lib/vendorActions";
 import { getCurrentEmployee } from "@/lib/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
@@ -107,6 +108,7 @@ export default async function RequisitionDetailPage({ params }) {
 
   const approveAction = decideRequisition.bind(null, requisition.requisition_id, employee?.email, "approved");
   const rejectAction = decideRequisition.bind(null, requisition.requisition_id, employee?.email, "rejected");
+  const editTermsAction = updateRequisitionTerms.bind(null, requisition.requisition_id, employee?.email);
   const vendorAction = assignVendor.bind(null, requisition.requisition_id, employee?.email);
 
   return (
@@ -134,6 +136,7 @@ export default async function RequisitionDetailPage({ params }) {
           </div>
         )}
 
+        {canDecide && <EditRequisitionForm action={editTermsAction} requisition={requisition} />}
         {canDecide && <DecisionForms approveAction={approveAction} rejectAction={rejectAction} />}
 
         {canAssignVendor && (

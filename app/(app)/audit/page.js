@@ -16,6 +16,7 @@ const EVENT_LABELS = {
   attendance_frozen: "Attendance register locked",
   attendance_unfrozen: "Attendance register unlocked",
   cancelled: "Cancelled",
+  modified_by_hod: "Modified by HOD",
 };
 
 export default async function AuditLogPage({ searchParams }) {

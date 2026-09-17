@@ -33,7 +33,7 @@ const CSV_COLUMNS = [
   { key: "remarks", label: "Remarks" },
 ];
 
-export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns, readOnly = false }) {
+export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns, readOnly = false, vendors = [] }) {
   const [state, formAction] = useToastFormState(saveAction, { error: null, success: false }, "Payment info saved.");
   const [edits, setEdits] = useState(() =>
     Object.fromEntries(
@@ -43,10 +43,12 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns, r
           rate_per_day: r.rate_per_day ?? "",
           payment_status: r.payment_status,
           payment_remarks: r.payment_remarks || "",
+          vendor_id: r.vendor_id || "",
         },
       ])
     )
   );
+  const vendorGstById = useMemo(() => Object.fromEntries(vendors.map((v) => [v.id, v.gst_percentage ?? 0])), [vendors]);
   const [selected, setSelected] = useState(() => new Set());
   const [bulkRate, setBulkRate] = useState("");
   const [bulkStatus, setBulkStatus] = useState("paid");
@@ -86,13 +88,14 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns, r
     for (const r of rows) {
       const rate = Number(edits[r.id]?.rate_per_day);
       const base = rate > 0 ? Math.round(rate * r.effective_days * 100) / 100 : null;
-      const gstPct = r.gst_percentage ?? 0;
+      const selectedVendorId = edits[r.id]?.vendor_id || "";
+      const gstPct = selectedVendorId ? vendorGstById[selectedVendorId] ?? 0 : 0;
       const gst = base !== null ? Math.round(base * (gstPct / 100) * 100) / 100 : null;
       const total = base !== null ? Math.round((base + gst) * 100) / 100 : null;
       amounts[r.id] = { base, gst, total, gstPct };
     }
     return amounts;
-  }, [edits, rows]);
+  }, [edits, rows, vendorGstById]);
 
   const payload = JSON.stringify(rows.map((r) => ({ id: r.id, ...edits[r.id] })));
 
@@ -142,6 +145,7 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns, r
                 </th>
               )}
               <th>Worker</th>
+              <th>Phone</th>
               <th>Requisition</th>
               <th>Store</th>
               <th>Vendor</th>
@@ -162,11 +166,28 @@ export default function PaymentsTable({ rows, saveAction, csvRows, csvColumns, r
                   </td>
                 )}
                 <td style={{ fontWeight: 600 }}>{r.worker_name}</td>
+                <td style={{ fontSize: 12, color: "var(--ink-muted)" }}>{r.phone_number || "—"}</td>
                 <td><Link href={`/requisitions/${r.requisition_id}`} className="req-id">{r.requisition_id}</Link></td>
                 <td>{r.store_name || "-"}</td>
-                <td>{r.vendor_name || <span style={{ color: "var(--ink-faint)" }}>Not assigned</span>}</td>
+                <td>
+                  {readOnly ? (
+                    r.vendor_name || <span style={{ color: "var(--ink-faint)" }}>Not assigned</span>
+                  ) : (
+                    <select
+                      value={edits[r.id]?.vendor_id ?? ""}
+                      onChange={(e) => updateEdit(r.id, "vendor_id", e.target.value)}
+                      style={{ padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13, maxWidth: 140 }}
+                      aria-label={`Vendor for ${r.worker_name}`}
+                    >
+                      <option value="">Not assigned</option>
+                      {vendors.map((v) => (
+                        <option key={v.id} value={v.id}>{v.name}</option>
+                      ))}
+                    </select>
+                  )}
+                </td>
                 <td style={{ textAlign: "center", fontSize: 12, color: "var(--ink-muted)" }}>
-                  {r.gst_percentage ? `${r.gst_percentage}%` : "—"}
+                  {liveAmounts[r.id]?.gstPct ? `${liveAmounts[r.id].gstPct}%` : "—"}
                 </td>
                 <td style={{ textAlign: "center" }}>{r.effective_days}</td>
                 <td>

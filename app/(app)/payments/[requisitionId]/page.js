@@ -36,11 +36,14 @@ export default async function PaymentDetailPage({ params }) {
   if (rows.length === 0) notFound();
 
   const supabase = createSupabaseServerClient();
-  const { data: requisition } = await supabase
-    .from("requisitions")
-    .select("invoice_number, invoice_file_url, fully_paid_at")
-    .eq("requisition_id", params.requisitionId)
-    .single();
+  const [{ data: requisition }, { data: activeVendors }] = await Promise.all([
+    supabase
+      .from("requisitions")
+      .select("invoice_number, invoice_file_url, fully_paid_at")
+      .eq("requisition_id", params.requisitionId)
+      .single(),
+    supabase.from("vendors").select("id, name, gst_percentage").eq("is_active", true).order("name"),
+  ]);
 
   const first = rows[0];
   const boundSaveAction = saveWorkerPayments.bind(null, employee.email);
@@ -49,6 +52,7 @@ export default async function PaymentDetailPage({ params }) {
 
   const csvRows = rows.map((r) => ({
     worker: r.worker_name,
+    phone_number: r.phone_number || "",
     requisition_id: r.requisition_id,
     worker_type: r.worker_type,
     store: r.store_name,
@@ -78,6 +82,7 @@ export default async function PaymentDetailPage({ params }) {
 
   const csvColumns = [
     { key: "worker", label: "Worker" },
+    { key: "phone_number", label: "Phone Number" },
     { key: "requisition_id", label: "Requisition ID" },
     { key: "worker_type", label: "Worker Type" },
     { key: "store", label: "Store" },
@@ -154,6 +159,7 @@ export default async function PaymentDetailPage({ params }) {
         csvRows={csvRows}
         csvColumns={csvColumns}
         readOnly={!!requisition?.fully_paid_at && employee.role !== "admin"}
+        vendors={activeVendors || []}
       />
     </div>
   );

@@ -846,3 +846,11 @@ create policy "hr admin deletes workers" on requisition_workers
 -- below — it was never gated by attendance_frozen and already allows
 -- any update as long as not fully paid (or admin), so no separate
 -- policy is needed here.
+
+-- ============================================================
+-- MIGRATION 13 — Per-worker vendor assignment (splitting one
+-- requisition's headcount across multiple vendors) and a phone
+-- number field per worker, captured at attendance time.
+-- ============================================================
+alter table requisition_workers add column if not exists vendor_id uuid references vendors(id);
+alter table requisition_workers add column if not exists phone_number text;

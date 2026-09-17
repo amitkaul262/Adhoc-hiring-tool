@@ -45,6 +45,7 @@ export default function AttendanceForm({ action, addWorkerAction, removeWorkerAc
     return init;
   });
   const [names, setNames] = useState(() => Object.fromEntries(workers.map((w) => [w.id, w.worker_name || `Worker ${w.slot_number}`])));
+  const [phones, setPhones] = useState(() => Object.fromEntries(workers.map((w) => [w.id, w.phone_number || ""])));
 
   function setCell(workerId, date, status) {
     setValues((prev) => ({ ...prev, [workerId]: { ...prev[workerId], [date]: status } }));
@@ -84,7 +85,7 @@ export default function AttendanceForm({ action, addWorkerAction, removeWorkerAc
         .map((d) => ({ requisition_worker_id: w.id, attendance_date: d, status: values[w.id][d] }))
     )
   );
-  const namesJson = JSON.stringify(workers.map((w) => ({ id: w.id, worker_name: names[w.id] })));
+  const namesJson = JSON.stringify(workers.map((w) => ({ id: w.id, worker_name: names[w.id], phone_number: phones[w.id] })));
 
   if (workers.length === 0) {
     return <div className="card"><p style={{ margin: 0 }}>No worker slots yet.</p></div>;
@@ -115,6 +116,7 @@ export default function AttendanceForm({ action, addWorkerAction, removeWorkerAc
           <thead>
             <tr>
               <th className="register-worker-col">Worker</th>
+              <th style={{ minWidth: 120 }}>Phone</th>
               {dates.map((date) => {
                 const { weekday, label, isWeekend } = dayMeta(date);
                 return (
@@ -139,6 +141,17 @@ export default function AttendanceForm({ action, addWorkerAction, removeWorkerAc
                     placeholder={`Worker ${w.slot_number}`}
                     className="register-name-input"
                     disabled={readOnly}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="tel"
+                    value={phones[w.id] ?? ""}
+                    onChange={(e) => setPhones((prev) => ({ ...prev, [w.id]: e.target.value }))}
+                    placeholder="Phone number"
+                    className="register-name-input"
+                    disabled={readOnly}
+                    aria-label={`Phone number for ${names[w.id] || `Worker ${w.slot_number}`}`}
                   />
                 </td>
                 {dates.map((date) => {
@@ -178,7 +191,7 @@ export default function AttendanceForm({ action, addWorkerAction, removeWorkerAc
               <td colSpan={dates.length - 1} className="register-summary-value">
                 F: {summary.counts.full_day} · ½: {summary.counts.half_day} · A: {summary.counts.absent} · L: {summary.counts.leave}
               </td>
-              <td colSpan={canManageRoster && !readOnly ? 3 : 2} className="register-summary-value">
+              <td colSpan={canManageRoster && !readOnly ? 4 : 3} className="register-summary-value">
                 {summary.rate === null ? "—" : `${summary.rate}% attendance`}
               </td>
             </tr>
@@ -192,12 +205,14 @@ export default function AttendanceForm({ action, addWorkerAction, removeWorkerAc
           filename={`${requisitionId || "attendance"}-register.csv`}
           columns={[
             { key: "worker", label: "Worker" },
+            { key: "phone", label: "Phone Number" },
             { key: "date", label: "Date" },
             { key: "status", label: "Status" },
           ]}
           rows={workers.flatMap((w) =>
             dates.map((d) => ({
               worker: names[w.id] || `Worker ${w.slot_number}`,
+              phone: phones[w.id] || "",
               date: d,
               status: STATUS_META[values[w.id]?.[d] || ""].label,
             }))
