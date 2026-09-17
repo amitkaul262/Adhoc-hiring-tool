@@ -61,14 +61,28 @@ export default async function AttendancePage({ params }) {
           slot_number: i + 1,
         }));
         const { data: created, error } = await admin.from("requisition_workers").insert(slots).select();
-        if (error) {
+        if (error?.code === "23505") {
+          // Someone else (a different role, opening the same page at nearly
+          // the same instant) won the race and created the slots first —
+          // not a real failure, just re-fetch what they created instead of
+          // erroring out. This is what makes first-time slot creation safe
+          // when two people load a brand-new register concurrently.
+          const { data: raceWinner } = await supabase
+            .from("requisition_workers")
+            .select("*")
+            .eq("requisition_id", params.requisitionId)
+            .order("slot_number");
+          workers = raceWinner || [];
+        } else if (error) {
           console.error("attendance page: worker slot auto-create failed", {
             requisitionId: params.requisitionId,
             error,
           });
           workerSetupError = error.message;
+          workers = created || [];
+        } else {
+          workers = created || [];
         }
-        workers = created || [];
       } else {
         workers = existingWorkers;
       }
