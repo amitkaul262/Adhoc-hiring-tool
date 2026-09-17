@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { useToastFormState } from "@/hooks/useToastFormState";
+import { useToast } from "@/components/ToastProvider";
 import ExportCsvButton from "@/components/ExportCsvButton";
 
 const STATUS_META = {
@@ -251,53 +252,58 @@ function StatusCell({ value, onChange, disabled, label }) {
   );
 }
 
-function AddSubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button type="submit" className="btn btn-secondary btn-sm" disabled={pending}>
-      {pending ? "Adding…" : "+ Add worker"}
-    </button>
-  );
-}
-
 // Lets HR correct the roster when fewer (or more) workers were actually
 // deployed than sanctioned — e.g. store manager asked for 10, the vendor
 // could only supply 8. number_of_workers on the requisition itself is
 // untouched, so what was originally asked for stays visible in reports.
+//
+// Deliberately NOT a <form> — this renders inside the main attendance
+// <form> (the one that saves the whole grid), and a <form> nested inside
+// another <form> is invalid HTML. Browsers silently drop the nested one,
+// which meant this button was actually submitting the OUTER form instead
+// of adding a worker. Calling the server action directly via onClick
+// sidesteps the nesting problem entirely.
 function AddWorkerButton({ action }) {
-  const [, formAction] = useToastFormState(action, { error: null }, "Worker added.");
-  return (
-    <form action={formAction}>
-      <AddSubmitButton />
-    </form>
-  );
-}
+  const [isPending, startTransition] = useTransition();
+  const { showToast } = useToast();
 
-function RemoveSubmitButton() {
-  const { pending } = useFormStatus();
+  function handleClick() {
+    startTransition(async () => {
+      const result = await action(null, null);
+      if (result?.error) showToast({ message: result.error, type: "error" });
+      else showToast({ message: "Worker added.", type: "success" });
+    });
+  }
+
   return (
-    <button type="submit" className="worker-remove-btn" disabled={pending} aria-label="Remove worker" title="Remove worker">
-      {pending ? "…" : "×"}
+    <button type="button" className="btn btn-secondary btn-sm" onClick={handleClick} disabled={isPending}>
+      {isPending ? "Adding…" : "+ Add worker"}
     </button>
   );
 }
 
 // Removing a worker also deletes their attendance rows (cascade on the
 // foreign key) — the confirm() is deliberate friction for a destructive,
-// hard-to-undo action.
+// hard-to-undo action. Same reasoning as AddWorkerButton above for why
+// this is a plain button, not a nested <form>.
 function RemoveWorkerButton({ action, workerId, workerName }) {
-  const boundAction = useMemo(() => action.bind(null, workerId), [action, workerId]);
-  const [, formAction] = useToastFormState(boundAction, { error: null }, `${workerName} removed.`);
+  const [isPending, startTransition] = useTransition();
+  const { showToast } = useToast();
+
+  function handleClick() {
+    if (!confirm(`Remove ${workerName}? This also deletes their attendance records for this requisition — this can't be undone.`)) {
+      return;
+    }
+    startTransition(async () => {
+      const result = await action(workerId, null, null);
+      if (result?.error) showToast({ message: result.error, type: "error" });
+      else showToast({ message: `${workerName} removed.`, type: "success" });
+    });
+  }
+
   return (
-    <form
-      action={formAction}
-      onSubmit={(e) => {
-        if (!confirm(`Remove ${workerName}? This also deletes their attendance records for this requisition — this can't be undone.`)) {
-          e.preventDefault();
-        }
-      }}
-    >
-      <RemoveSubmitButton />
-    </form>
+    <button type="button" className="worker-remove-btn" onClick={handleClick} disabled={isPending} aria-label="Remove worker" title="Remove worker">
+      {isPending ? "…" : "×"}
+    </button>
   );
 }
