@@ -6,15 +6,16 @@ import {
   sendAttendanceFrozenEmail,
   sendWeeklyHrSummaryEmail,
 } from "@/lib/email";
+import { backupToSheets } from "@/lib/backupToSheets";
 import { addBusinessDays, isWeekend, todayUTC, totalDaysInclusive, averageDuration } from "@/lib/businessDays";
 
 // Triggered by Vercel Cron (see vercel.json — runs once daily, which is
 // both the Hobby-plan frequency limit and genuinely all this needs). No
 // user session exists here, so this uses the service-role admin client
 // and bypasses RLS entirely by design; it's the one legitimate
-// system-level job in this app. Runs three independent jobs each time:
-// approval reminders, attendance reminders/freeze, and (once a week) the
-// HR summary digest.
+// system-level job in this app. Runs four independent jobs each time:
+// approval reminders, attendance reminders/freeze, (once a week) the HR
+// summary digest, and the morning half of the twice-daily Sheets backup.
 export async function GET(request) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -27,7 +28,15 @@ export async function GET(request) {
   const attendanceResult = await runAttendanceReminders(supabase);
   const weeklyResult = await runWeeklySummary(supabase);
 
-  return NextResponse.json({ approvalResult, attendanceResult, weeklyResult });
+  let backupResult;
+  try {
+    backupResult = await backupToSheets();
+  } catch (e) {
+    console.error("morning backup failed:", e);
+    backupResult = { success: false, error: e.message };
+  }
+
+  return NextResponse.json({ approvalResult, attendanceResult, weeklyResult, backupResult });
 }
 
 // ------------------------------------------------------------

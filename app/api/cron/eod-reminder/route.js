@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabaseServer";
 import { sendEodAttendanceReminderEmail } from "@/lib/email";
+import { backupToSheets } from "@/lib/backupToSheets";
 import { todayUTC } from "@/lib/businessDays";
 
 // Triggered by Vercel Cron (see vercel.json) at end of day IST — a
@@ -12,6 +13,18 @@ export async function GET(request) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Runs unconditionally, before any of the reminder logic below — that
+  // logic has several early-return paths (nothing active today, or
+  // everything already marked), and the backup should happen every day
+  // regardless of whether there's a reminder to send.
+  let backupResult;
+  try {
+    backupResult = await backupToSheets();
+  } catch (e) {
+    console.error("evening backup failed:", e);
+    backupResult = { success: false, error: e.message };
   }
 
   const supabase = createSupabaseAdminClient();
@@ -29,7 +42,7 @@ export async function GET(request) {
 
   const ids = (requisitions || []).map((r) => r.requisition_id);
   if (ids.length === 0) {
-    return NextResponse.json({ sent: false, reason: "No active requisitions today" });
+    return NextResponse.json({ sent: false, reason: "No active requisitions today", backupResult });
   }
 
   const [{ data: workers }, { data: markedToday }] = await Promise.all([
@@ -58,14 +71,14 @@ export async function GET(request) {
     .filter((r) => r.worker_count > 0 && r.marked_today < r.worker_count);
 
   if (incomplete.length === 0) {
-    return NextResponse.json({ sent: false, reason: "Everything already marked for today" });
+    return NextResponse.json({ sent: false, reason: "Everything already marked for today", backupResult });
   }
 
   try {
     await sendEodAttendanceReminderEmail(incomplete);
-    return NextResponse.json({ sent: true, count: incomplete.length });
+    return NextResponse.json({ sent: true, count: incomplete.length, backupResult });
   } catch (e) {
     console.error("eod-reminder: send failed", e);
-    return NextResponse.json({ sent: false, error: "Send failed" });
+    return NextResponse.json({ sent: false, error: "Send failed", backupResult });
   }
 }
