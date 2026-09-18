@@ -1,10 +1,11 @@
 /**
- * Adhoc Hiring Tool — email + Drive upload relay.
+ * Adhoc Hiring Tool — email + Drive upload + Sheets backup relay.
  *
  * This runs entirely inside Google Apps Script, under your own Google
- * account's Gmail/Drive permission (not a password of any kind), and
- * exposes one URL the Next.js app can POST requests to — either "send
- * this email" or "upload this file to Drive".
+ * account's Gmail/Drive/Sheets permission (not a password of any kind),
+ * and exposes one URL the Next.js app can POST requests to — "send this
+ * email", "upload this file to Drive", or "back up these tables to a
+ * Sheet".
  *
  * Setup:
  * 1. Project Settings (gear icon) -> Script Properties -> add:
@@ -15,10 +16,14 @@
  *      the URL after /folders/. The script's Google account needs edit
  *      access to this folder (it's automatic if that account owns the
  *      folder; otherwise share the folder with that account first).
+ *    - BACKUP_SHEET_ID: create a new Google Sheet yourself (so you know
+ *      where to find it), open it, and copy the ID from its URL — the
+ *      part between /d/ and /edit. Same access rule as the Drive
+ *      folder: the script's account needs edit access to it.
  * 2. Deploy -> New deployment (or Manage deployments -> Edit, if you're
  *    updating an existing one) -> type "Web app" -> Execute as "Me" ->
- *    Who has access "Anyone" -> Deploy. Approve both the Gmail AND Drive
- *    permission prompts when they appear.
+ *    Who has access "Anyone" -> Deploy. Approve the Gmail, Drive, AND
+ *    Sheets permission prompts when they appear.
  * 3. Copy the resulting URL (ends in /exec) into APPS_SCRIPT_URL in the
  *    Next.js app's env vars, and the same secret into APPS_SCRIPT_SECRET
  *    (unchanged if you're updating an existing deployment).
@@ -34,6 +39,10 @@ function doPost(e) {
 
     if (body.action === "upload_file") {
       return handleUploadFile(body);
+    }
+
+    if (body.action === "backup_to_sheet") {
+      return handleBackupToSheet(body);
     }
 
     return handleSendEmail(body);
@@ -88,6 +97,51 @@ function handleUploadFile(body) {
   }
 
   return jsonResponse({ success: true, fileId: file.getId(), url: file.getUrl() });
+}
+
+// Writes a full snapshot of the given tables into a backup Google
+// Sheet — one tab per table, fully replaced each time (not appended),
+// so the sheet always reflects the current state as of whenever this
+// last ran. body.sheets is [{ name, headers, rows }, ...].
+function handleBackupToSheet(body) {
+  if (!body.sheets || !Array.isArray(body.sheets)) {
+    return jsonResponse({ error: "Missing sheets array" });
+  }
+
+  var spreadsheetId = PropertiesService.getScriptProperties().getProperty("BACKUP_SHEET_ID");
+  if (!spreadsheetId) {
+    return jsonResponse({ error: "BACKUP_SHEET_ID script property isn't set" });
+  }
+
+  var spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+  var results = [];
+
+  for (var i = 0; i < body.sheets.length; i++) {
+    var sheetDef = body.sheets[i];
+    var name = String(sheetDef.name || "sheet" + i).slice(0, 100);
+    var headers = sheetDef.headers || [];
+    var rows = sheetDef.rows || [];
+
+    var sheet = spreadsheet.getSheetByName(name);
+    if (!sheet) {
+      sheet = spreadsheet.insertSheet(name);
+    } else {
+      sheet.clear();
+    }
+
+    sheet.getRange(1, 1).setValue("Backed up: " + new Date().toString());
+
+    if (headers.length > 0) {
+      sheet.getRange(2, 1, 1, headers.length).setValues([headers]);
+    }
+    if (rows.length > 0) {
+      sheet.getRange(3, 1, rows.length, headers.length).setValues(rows);
+    }
+
+    results.push({ name: name, rowCount: rows.length });
+  }
+
+  return jsonResponse({ success: true, sheets: results });
 }
 
 function jsonResponse(obj) {

@@ -15,6 +15,7 @@ function readPersonFields(formData) {
     store_name: (formData.get("store_name") || "").toString().trim() || null,
     store_code: (formData.get("store_code") || "").toString().trim() || null,
     reports_to_email: (formData.get("reports_to_email") || "").toString().trim().toLowerCase() || null,
+    is_hr_poc: formData.get("is_hr_poc") === "on",
   };
 }
 

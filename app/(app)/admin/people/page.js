@@ -38,7 +38,10 @@ export default async function AdminPeoplePage() {
                   <tr key={p.email}>
                     <td>{p.full_name}</td>
                     <td style={{ fontSize: 12, color: "var(--ink-muted)" }}>{p.email}</td>
-                    <td><span className={`emp-role-badge emp-role-${p.role}`}>{ROLE_LABELS[p.role] || p.role}</span></td>
+                    <td>
+                      <span className={`emp-role-badge emp-role-${p.role}`}>{ROLE_LABELS[p.role] || p.role}</span>
+                      {p.is_hr_poc && <span className="pill" style={{ marginLeft: 6, fontSize: 10 }}>HR POC</span>}
+                    </td>
                     <td>{p.store_name || p.function || "-"}</td>
                     <td style={{ fontSize: 12, color: "var(--ink-muted)" }}>{p.reports_to_email || "-"}</td>
                     <td><span className={`pill ${p.is_active ? "pill-active" : "pill-inactive"}`}>{p.is_active ? "Active" : "Inactive"}</span></td>

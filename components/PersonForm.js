@@ -89,6 +89,18 @@ export default function PersonForm({ action, initial, isEdit = false }) {
         <p className="hint">This is what decides who a store manager&apos;s requisitions go to for approval.</p>
       </div>
 
+      <div className="field" style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+        <input id="is_hr_poc" name="is_hr_poc" type="checkbox" defaultChecked={p.is_hr_poc || false} style={{ width: "auto", marginTop: 4 }} />
+        <div>
+          <label htmlFor="is_hr_poc" style={{ margin: 0 }}>HR point of contact</label>
+          <p className="hint" style={{ marginTop: 2 }}>
+            Cc&apos;d on every notification email the tool sends — requisitions raised, approved,
+            vendor assigned, attendance reminders, and more. Independent of their role above; any
+            number of people can be a POC.
+          </p>
+        </div>
+      </div>
+
       {isEdit && (
         <div className="field" style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <input id="is_active" name="is_active" type="checkbox" defaultChecked={p.is_active !== false} style={{ width: "auto" }} />

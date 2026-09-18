@@ -865,3 +865,14 @@ create policy "hr admin deletes workers" on requisition_workers
 -- ============================================================
 alter table requisition_workers add column if not exists vendor_id uuid references vendors(id);
 alter table requisition_workers add column if not exists phone_number text;
+
+-- ============================================================
+-- MIGRATION 14 — HR notification recipients move from an
+-- environment variable into the app itself: any person can be
+-- flagged as an HR point of contact (independent of their actual
+-- role — a store manager or admin could also be a POC, and not
+-- every "hr" role user necessarily needs to be one), managed on
+-- the existing Admin > People form. Multiple POCs are simply
+-- multiple people with this flag checked.
+-- ============================================================
+alter table employee_master add column if not exists is_hr_poc boolean not null default false;
