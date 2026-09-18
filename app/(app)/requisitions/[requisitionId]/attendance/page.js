@@ -87,11 +87,18 @@ export default async function AttendancePage({ params }) {
         workers = existingWorkers;
       }
 
-      const { data: attendanceRows } = await supabase
+      const { data: attendanceRows, error: attendanceError } = await supabase
         .from("requisition_attendance")
         .select("requisition_worker_id, attendance_date, status")
         .eq("requisition_id", params.requisitionId)
         .not("status", "is", null);
+
+      if (attendanceError) {
+        console.error("attendance page: couldn't load existing marks", attendanceError);
+        workerSetupError = workerSetupError
+          ? workerSetupError
+          : `Couldn't load previously marked attendance (${attendanceError.message}). The register below may look blank even though attendance has been marked — do not re-mark it until this is confirmed fixed.`;
+      }
 
       existing = {};
       for (const row of attendanceRows || []) {

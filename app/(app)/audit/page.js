@@ -35,11 +35,24 @@ export default async function AuditLogPage({ searchParams }) {
   if (searchParams?.event_type) query = query.eq("event_type", searchParams.event_type);
   if (searchParams?.actor) query = query.ilike("actor_email", `%${searchParams.actor}%`);
 
-  const { data: events } = await query;
+  const { data: events, error: eventsError } = await query;
+
+  if (eventsError) {
+    console.error("audit log: query failed", eventsError);
+  }
 
   return (
     <div className="container-wide">
         <span className="eyebrow">HR</span>
+        {eventsError && (
+          <div className="card" style={{ marginBottom: 20, background: "var(--danger-tint)", borderColor: "var(--danger)" }}>
+            <p style={{ margin: 0, fontWeight: 600, color: "var(--danger)" }}>Couldn&apos;t load the audit log</p>
+            <p style={{ margin: "4px 0 0", fontSize: 13 }}>
+              This is a connection or query problem, not an empty log — treat what's shown below
+              (if anything) as incomplete, not authoritative. Details: {eventsError}
+            </p>
+          </div>
+        )}
         <div className="section-header">
           <h1>Audit log</h1>
         </div>

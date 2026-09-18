@@ -18,7 +18,7 @@ function avgApprovalTime(decided) {
 }
 
 export default async function HodDashboard({ employee }) {
-  let pending = [], decided = [];
+  let pending = [], decided = [], fetchError = null;
 
   if (PREVIEW_MODE) {
     // No HOD-specific mock scenario yet — preview mode was built around
@@ -28,11 +28,15 @@ export default async function HodDashboard({ employee }) {
     decided = MOCK_REQUISITIONS.filter((r) => r.status !== "pending_hod_approval");
   } else {
     const supabase = createSupabaseServerClient();
-    const { data: all } = await supabase
+    const { data: all, error } = await supabase
       .from("requisitions")
       .select("*")
       .eq("hod_email", employee.email)
       .order("created_at", { ascending: false });
+    if (error) {
+      console.error("HodDashboard: query failed", error);
+      fetchError = error.message;
+    }
     pending = (all || []).filter((r) => r.status === "pending_hod_approval");
     decided = (all || []).filter((r) => r.status !== "pending_hod_approval");
   }
@@ -47,6 +51,16 @@ export default async function HodDashboard({ employee }) {
       <div className="section-header">
         <h1>{employee.full_name}</h1>
       </div>
+
+      {fetchError && (
+        <div className="card" style={{ marginBottom: 20, background: "var(--danger-tint)", borderColor: "var(--danger)" }}>
+          <p style={{ margin: 0, fontWeight: 600, color: "var(--danger)" }}>Couldn&apos;t load your requisitions</p>
+          <p style={{ margin: "4px 0 0", fontSize: 13 }}>
+            The counts below may be incomplete or wrong — this is a connection problem, not
+            necessarily "nothing pending." Try refreshing.
+          </p>
+        </div>
+      )}
 
       <KpiStrip
         stats={[
