@@ -41,19 +41,18 @@ export async function decideRequisition(requisitionId, hodEmail, decision, prevS
     remarks: remarks || null,
   });
 
-  try {
-    await sendRequisitionDecisionEmail(requisition);
-  } catch (e) {
-    console.error("sendRequisitionDecisionEmail failed:", e);
-  }
-
+  // These two emails are fully independent of each other, so they run
+  // concurrently rather than one after another — Apps Script round trips
+  // are genuinely slow (often multiple seconds each), and this was the
+  // single most common action in the app (every approval) waiting on
+  // two of them back to back before the button could report success.
+  const emailTasks = [
+    sendRequisitionDecisionEmail(requisition).catch((e) => console.error("sendRequisitionDecisionEmail failed:", e)),
+  ];
   if (decision === "approved") {
-    try {
-      await sendVendorNeededEmail(requisition);
-    } catch (e) {
-      console.error("sendVendorNeededEmail failed:", e);
-    }
+    emailTasks.push(sendVendorNeededEmail(requisition).catch((e) => console.error("sendVendorNeededEmail failed:", e)));
   }
+  await Promise.all(emailTasks);
 
   revalidatePath(`/requisitions/${requisitionId}`);
   return { error: null, success: true, decided: decision };
