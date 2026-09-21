@@ -28,48 +28,57 @@ export default async function RequisitionDetailPage({ params }) {
     activeVendors = [];
   } else {
     const supabase = createSupabaseServerClient();
-    ({ data: requisition } = await supabase
-      .from("requisitions")
-      .select("*")
-      .eq("requisition_id", params.requisitionId)
-      .single());
-    ({ data: events } = await supabase
-      .from("requisition_events")
-      .select("*")
-      .eq("requisition_id", params.requisitionId)
-      .order("created_at", { ascending: true }));
 
-    if (requisition?.vendor_id) {
-      ({ data: vendor } = await supabase
-        .from("vendors")
-        .select("name")
-        .eq("id", requisition.vendor_id)
-        .single());
-    }
+    // requisition and events are fully independent of each other — both
+    // only need the route param, not each other's result — so they run
+    // concurrently instead of one after another.
+    const [{ data: requisitionData }, { data: eventsData }] = await Promise.all([
+      supabase.from("requisitions").select("*").eq("requisition_id", params.requisitionId).single(),
+      supabase.from("requisition_events").select("*").eq("requisition_id", params.requisitionId).order("created_at", { ascending: true }),
+    ]);
+    requisition = requisitionData;
+    events = eventsData;
 
-    if (employee && ["hr", "admin"].includes(employee.role) && requisition?.status === "approved" && !requisition.vendor_id) {
-      ({ data: activeVendors } = await supabase
-        .from("vendors")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name"));
-      const vendorStats = await fetchAllVendorStats();
-      activeVendors = (activeVendors || []).map((v) => ({ ...v, stats: vendorStats[v.id] || null }));
+    // Everything below genuinely needs `requisition` resolved first (each
+    // reads its fields to decide whether to run, or what to fetch) — but
+    // none of these three blocks depend on each other's results, so they
+    // run concurrently rather than as three sequential round trips.
+    const showVendorAssign =
+      employee && ["hr", "admin"].includes(employee.role) && requisition?.status === "approved" && !requisition?.vendor_id;
+    const canSeeSummaries =
+      employee &&
+      requisition?.status === "approved" &&
+      (requisition?.raised_by_email === employee.email || ["hr", "admin"].includes(employee.role));
+    const canSeePayments = employee && ["hr", "admin"].includes(employee.role) && requisition?.status === "approved";
+
+    const [vendorResult, vendorListResult, vendorStatsResult, summaryCountsResult, paymentRowsResult] = await Promise.all([
+      requisition?.vendor_id
+        ? supabase.from("vendors").select("name").eq("id", requisition.vendor_id).single()
+        : Promise.resolve({ data: null }),
+      showVendorAssign
+        ? supabase.from("vendors").select("id, name").eq("is_active", true).order("name")
+        : Promise.resolve({ data: null }),
+      showVendorAssign ? fetchAllVendorStats() : Promise.resolve(null),
+      canSeeSummaries
+        ? Promise.all([
+            supabase.from("requisition_workers").select("id", { count: "exact", head: true }).eq("requisition_id", params.requisitionId),
+            supabase.from("requisition_attendance").select("id", { count: "exact", head: true }).eq("requisition_id", params.requisitionId).not("status", "is", null),
+          ])
+        : Promise.resolve(null),
+      canSeePayments ? fetchWorkerPaymentRows(params.requisitionId) : Promise.resolve(null),
+    ]);
+
+    vendor = vendorResult.data;
+
+    if (showVendorAssign) {
+      activeVendors = (vendorListResult.data || []).map((v) => ({ ...v, stats: vendorStatsResult[v.id] || null }));
     }
 
     // Attendance + payment summaries — this is what makes this page a
     // genuine single-view "homepage" for the requisition, rather than
     // just a set of links out to other pages.
-    const canSeeSummaries =
-      employee &&
-      requisition?.status === "approved" &&
-      (requisition.raised_by_email === employee.email || ["hr", "admin"].includes(employee.role));
-
-    if (canSeeSummaries) {
-      const [{ count: workerCount }, { count: markedCells }] = await Promise.all([
-        supabase.from("requisition_workers").select("id", { count: "exact", head: true }).eq("requisition_id", params.requisitionId),
-        supabase.from("requisition_attendance").select("id", { count: "exact", head: true }).eq("requisition_id", params.requisitionId).not("status", "is", null),
-      ]);
+    if (canSeeSummaries && summaryCountsResult) {
+      const [{ count: workerCount }, { count: markedCells }] = summaryCountsResult;
       const expectedCells = (workerCount || 0) * totalDaysInclusive(requisition.from_date, requisition.to_date);
       attendanceSummary = {
         workerCount: workerCount || 0,
@@ -81,9 +90,8 @@ export default async function RequisitionDetailPage({ params }) {
 
     // Payment summary is HR/admin only — rates negotiated with vendors
     // aren't shown to the store manager or HOD here.
-    if (employee && ["hr", "admin"].includes(employee.role) && requisition?.status === "approved") {
-      const { rows: paymentRows } = await fetchWorkerPaymentRows(params.requisitionId);
-      const rollup = summarizeByRequisition(paymentRows)[0];
+    if (canSeePayments && paymentRowsResult) {
+      const rollup = summarizeByRequisition(paymentRowsResult.rows)[0];
       paymentSummary = rollup || null;
     }
   }

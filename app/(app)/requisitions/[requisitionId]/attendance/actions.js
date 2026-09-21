@@ -37,16 +37,32 @@ export async function markAttendance(requisitionId, employeeEmail, prevState, fo
     return { error: "Something went wrong reading the register. Try again." };
   }
 
-  // Worker names and phone numbers first — harmless to update even if unchanged.
-  for (const n of names) {
-    if (!n.id) continue;
-    await supabase
-      .from("requisition_workers")
-      .update({
-        worker_name: (n.worker_name || "").trim() || null,
-        phone_number: (n.phone_number || "").trim() || null,
-      })
-      .eq("id", n.id);
+  // Worker names and phone numbers — run in parallel instead of one at
+  // a time, since a large roster (10+ workers) was turning every
+  // attendance save into 10+ sequential database round trips before
+  // this even got to the actual attendance cells. Deliberately using
+  // individual update() calls in parallel rather than a single upsert()
+  // — upsert's insert path would need every NOT NULL column (like
+  // slot_number) even though it's never actually taken here, which is
+  // an unnecessary risk for a benefit update() gets without it.
+  const nameUpdates = names.filter((n) => n.id);
+  if (nameUpdates.length > 0) {
+    const results = await Promise.all(
+      nameUpdates.map((n) =>
+        supabase
+          .from("requisition_workers")
+          .update({
+            worker_name: (n.worker_name || "").trim() || null,
+            phone_number: (n.phone_number || "").trim() || null,
+          })
+          .eq("id", n.id)
+      )
+    );
+    const nameError = results.find((r) => r.error)?.error;
+    if (nameError) {
+      console.error("markAttendance: worker name/phone update failed:", nameError);
+      return { error: "Couldn't save worker names. Please try again." };
+    }
   }
 
   if (entries.length > 0) {
